@@ -869,75 +869,73 @@ namespace Spine.Unity {
 
 				// DEAD MONEY
 				// Disable tintBlack.
-				var tintBlack = settings.tintBlack;
-				tintBlack = false;
-				if (tintBlack) {
-					Vector2 rg, b2;
-					int vi = vertexIndex;
-					b2.y = 1f;
+// 				if (settings.tintBlack) {
+// 					Vector2 rg, b2;
+// 					int vi = vertexIndex;
+// 					b2.y = 1f;
 
-					PrepareOptionalUVBuffer(ref uv2, totalVertexCount);
-					PrepareOptionalUVBuffer(ref uv3, totalVertexCount);
+// 					PrepareOptionalUVBuffer(ref uv2, totalVertexCount);
+// 					PrepareOptionalUVBuffer(ref uv3, totalVertexCount);
 
-					Vector2[] uv2i = uv2.Items;
-					Vector2[] uv3i = uv3.Items;
+// 					Vector2[] uv2i = uv2.Items;
+// 					Vector2[] uv3i = uv3.Items;
 
-					for (int slotIndex = startSlot; slotIndex < endSlot; slotIndex++) {
-						Slot slot = drawOrderItems[slotIndex];
-						if (!slot.Bone.Active
-#if SLOT_ALPHA_DISABLES_ATTACHMENT
-							|| slot.A == 0f
-#endif
-							) continue;
-						Attachment attachment = slot.Attachment;
+// 					for (int slotIndex = startSlot; slotIndex < endSlot; slotIndex++) {
+// 						Slot slot = drawOrderItems[slotIndex];
+// 						if (!slot.Bone.Active
+// #if SLOT_ALPHA_DISABLES_ATTACHMENT
+// 							|| slot.A == 0f
+// #endif
+// 							) continue;
+// 						Attachment attachment = slot.Attachment;
 
-						rg.x = slot.R2; //r
-						rg.y = slot.G2; //g
-						b2.x = slot.B2; //b
-						b2.y = 1.0f;
+// 						rg.x = slot.R2; //r
+// 						rg.y = slot.G2; //g
+// 						b2.x = slot.B2; //b
+// 						b2.y = 1.0f;
 
-						RegionAttachment regionAttachment = attachment as RegionAttachment;
-						if (regionAttachment != null) {
-							if (settings.pmaVertexColors) {
-								float alpha = a * slot.A * regionAttachment.A;
-								bool isAdditiveSlot = slot.Data.BlendMode == BlendMode.Additive;
-#if LINEAR_COLOR_SPACE_FIX_ADDITIVE_ALPHA
-								if (linearColorSpace && isAdditiveSlot)
-									alpha = Mathf.LinearToGammaSpace(alpha); // compensate GammaToLinear performed in shader
-#endif
-								rg.x *= alpha;
-								rg.y *= alpha;
-								b2.x *= alpha;
-								b2.y = isAdditiveSlot ? 0 : alpha;
-							}
-							uv2i[vi] = rg; uv2i[vi + 1] = rg; uv2i[vi + 2] = rg; uv2i[vi + 3] = rg;
-							uv3i[vi] = b2; uv3i[vi + 1] = b2; uv3i[vi + 2] = b2; uv3i[vi + 3] = b2;
-							vi += 4;
-						} else { //} if (settings.renderMeshes) {
-							MeshAttachment meshAttachment = attachment as MeshAttachment;
-							if (meshAttachment != null) {
-								if (settings.pmaVertexColors) {
-									float alpha = a * slot.A * meshAttachment.A;
-									bool isAdditiveSlot = slot.Data.BlendMode == BlendMode.Additive;
-#if LINEAR_COLOR_SPACE_FIX_ADDITIVE_ALPHA
-									if (linearColorSpace && isAdditiveSlot)
-										alpha = Mathf.LinearToGammaSpace(alpha); // compensate GammaToLinear performed in shader
-#endif
-									rg.x *= alpha;
-									rg.y *= alpha;
-									b2.x *= alpha;
-									b2.y = isAdditiveSlot ? 0 : alpha;
-								}
-								int verticesArrayLength = meshAttachment.WorldVerticesLength;
-								for (int iii = 0; iii < verticesArrayLength; iii += 2) {
-									uv2i[vi] = rg;
-									uv3i[vi] = b2;
-									vi++;
-								}
-							}
-						}
-					}
-				}
+// 						RegionAttachment regionAttachment = attachment as RegionAttachment;
+// 						if (regionAttachment != null) {
+// 							if (settings.pmaVertexColors) {
+// 								float alpha = a * slot.A * regionAttachment.A;
+// 								bool isAdditiveSlot = slot.Data.BlendMode == BlendMode.Additive;
+// #if LINEAR_COLOR_SPACE_FIX_ADDITIVE_ALPHA
+// 								if (linearColorSpace && isAdditiveSlot)
+// 									alpha = Mathf.LinearToGammaSpace(alpha); // compensate GammaToLinear performed in shader
+// #endif
+// 								rg.x *= alpha;
+// 								rg.y *= alpha;
+// 								b2.x *= alpha;
+// 								b2.y = isAdditiveSlot ? 0 : alpha;
+// 							}
+// 							uv2i[vi] = rg; uv2i[vi + 1] = rg; uv2i[vi + 2] = rg; uv2i[vi + 3] = rg;
+// 							uv3i[vi] = b2; uv3i[vi + 1] = b2; uv3i[vi + 2] = b2; uv3i[vi + 3] = b2;
+// 							vi += 4;
+// 						} else { //} if (settings.renderMeshes) {
+// 							MeshAttachment meshAttachment = attachment as MeshAttachment;
+// 							if (meshAttachment != null) {
+// 								if (settings.pmaVertexColors) {
+// 									float alpha = a * slot.A * meshAttachment.A;
+// 									bool isAdditiveSlot = slot.Data.BlendMode == BlendMode.Additive;
+// #if LINEAR_COLOR_SPACE_FIX_ADDITIVE_ALPHA
+// 									if (linearColorSpace && isAdditiveSlot)
+// 										alpha = Mathf.LinearToGammaSpace(alpha); // compensate GammaToLinear performed in shader
+// #endif
+// 									rg.x *= alpha;
+// 									rg.y *= alpha;
+// 									b2.x *= alpha;
+// 									b2.y = isAdditiveSlot ? 0 : alpha;
+// 								}
+// 								int verticesArrayLength = meshAttachment.WorldVerticesLength;
+// 								for (int iii = 0; iii < verticesArrayLength; iii += 2) {
+// 									uv2i[vi] = rg;
+// 									uv3i[vi] = b2;
+// 									vi++;
+// 								}
+// 							}
+// 						}
+// 					}
+// 				}
 
 				for (int slotIndex = startSlot; slotIndex < endSlot; slotIndex++) {
 					Slot slot = drawOrderItems[slotIndex];
