@@ -583,6 +583,10 @@ namespace Spine.Unity {
 			float zSpacing = settings.zSpacing;
 			bool pmaVertexColors = settings.pmaVertexColors;
 			bool tintBlack = settings.tintBlack;
+			// DEAD MONEY
+			// Disable tintBlack feature.
+			tintBlack = false;
+			// DEAD MONEY
 #if LINEAR_COLOR_SPACE_FIX_ADDITIVE_ALPHA
 			bool linearColorSpace = QualitySettings.activeColorSpace == ColorSpace.Linear;
 #endif
@@ -848,6 +852,10 @@ namespace Spine.Unity {
 			Color32[] cbi = colorBuffer.Items;
 			int lastSlotIndex = 0;
 
+            // DEAD MONEY
+			// Populate slot index in UV2.
+            var uv2i = UV2;
+
 			// drawOrder[endSlot] is excluded
 			for (int si = 0, n = instruction.submeshInstructions.Count; si < n; si++) {
 				SubmeshInstruction submesh = instruction.submeshInstructions.Items[si];
@@ -859,7 +867,11 @@ namespace Spine.Unity {
 				int startSlot = submesh.startSlot;
 				lastSlotIndex = endSlot;
 
-				if (settings.tintBlack) {
+				// DEAD MONEY
+				// Disable tintBlack.
+				var tintBlack = settings.tintBlack;
+				tintBlack = false;
+				if (tintBlack) {
 					Vector2 rg, b2;
 					int vi = vertexIndex;
 					b2.y = 1f;
@@ -979,6 +991,19 @@ namespace Spine.Unity {
 						ubi[vertexIndex + 2].x = regionUVs[RegionAttachment.ULX]; ubi[vertexIndex + 2].y = regionUVs[RegionAttachment.ULY];
 						ubi[vertexIndex + 3].x = regionUVs[RegionAttachment.URX]; ubi[vertexIndex + 3].y = regionUVs[RegionAttachment.URY];
 
+						// DEAD MONEY
+						// Write the slot index into uv2.
+                        var slotIndexF = (float) slot.Data.Index;
+                        uv2i[vertexIndex + 0].x = slotIndexF;
+                        uv2i[vertexIndex + 0].y = 0.0f;
+                        uv2i[vertexIndex + 1].x = slotIndexF;
+                        uv2i[vertexIndex + 1].y = 0.0f;
+                        uv2i[vertexIndex + 2].x = slotIndexF;
+                        uv2i[vertexIndex + 2].y = 0.0f;
+                        uv2i[vertexIndex + 3].x = slotIndexF;
+                        uv2i[vertexIndex + 3].y = 0.0f;
+						// DEAD MONEY
+
 						if (x1 < bmin.x) bmin.x = x1; // Potential first attachment bounds initialization. Initial min should not block initial max. Same for Y below.
 						if (x1 > bmax.x) bmax.x = x1;
 						if (x2 < bmin.x) bmin.x = x2;
@@ -1049,6 +1074,13 @@ namespace Spine.Unity {
 
 								if (y < bmin.y) bmin.y = y;
 								else if (y > bmax.y) bmax.y = y;
+
+								// DEAD MONEY
+								// Write slot index to uv2.
+                                var slotIndexF = (float) slot.Data.Index;
+                                uv2i[vertexIndex].x = slotIndexF;
+                                uv2i[vertexIndex].y = 0f;
+								// DEAD MONEY
 
 								vertexIndex++;
 							}
@@ -1314,14 +1346,15 @@ namespace Spine.Unity {
 				Array.Resize(ref uvBuffer.Items, minimumVertexCount);
 				Array.Resize(ref colorBuffer.Items, minimumVertexCount);
 
-				if (inlcudeTintBlack) {
-					if (uv2 == null) {
-						uv2 = new ExposedList<Vector2>(minimumVertexCount);
-						uv3 = new ExposedList<Vector2>(minimumVertexCount);
-					}
-					uv2.Resize(minimumVertexCount);
-					uv3.Resize(minimumVertexCount);
+				// BEGIN DEAD MONEY
+				// Always include additional vertex data as we pack extra shader data in them.
+				if (uv2 == null) {
+					uv2 = new ExposedList<Vector2>(minimumVertexCount);
+					uv3 = new ExposedList<Vector2>(minimumVertexCount);
 				}
+				uv2.Resize(minimumVertexCount);
+				uv3.Resize(minimumVertexCount);
+				// END DEAD MONEY
 
 				if (includeNormals) {
 					if (normals == null)
