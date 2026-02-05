@@ -36,6 +36,11 @@ namespace Spine {
 		/// <summary>The attachment's name.</summary>
 		public string Name { get; }
 
+		// DEAD MONEY
+		// Facing direction for F/B body system. 0.0 = back, 1.0 = front.
+		public float Facing { get; set; }
+		// DEAD MONEY
+
 		protected Attachment (string name) {
 			if (name == null) throw new ArgumentNullException("name", "name cannot be null");
 			this.Name = name;
@@ -44,6 +49,9 @@ namespace Spine {
 		/// <summary>Copy constructor.</summary>
 		protected Attachment (Attachment other) {
 			Name = other.Name;
+			// DEAD MONEY
+			Facing = other.Facing;
+			// DEAD MONEY
 		}
 
 		override public string ToString () {

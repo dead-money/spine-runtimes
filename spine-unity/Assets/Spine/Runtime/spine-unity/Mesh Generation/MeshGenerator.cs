@@ -990,16 +990,17 @@ namespace Spine.Unity {
 						ubi[vertexIndex + 3].x = regionUVs[RegionAttachment.URX]; ubi[vertexIndex + 3].y = regionUVs[RegionAttachment.URY];
 
 						// DEAD MONEY
-						// Write the slot index into uv2.
+						// Write slot index to uv2.x, facing to uv2.y.
                         var slotIndexF = (float) slot.Data.Index;
+                        var facingF = regionAttachment.Facing;
                         uv2i[vertexIndex + 0].x = slotIndexF;
-                        uv2i[vertexIndex + 0].y = 0.0f;
+                        uv2i[vertexIndex + 0].y = facingF;
                         uv2i[vertexIndex + 1].x = slotIndexF;
-                        uv2i[vertexIndex + 1].y = 0.0f;
+                        uv2i[vertexIndex + 1].y = facingF;
                         uv2i[vertexIndex + 2].x = slotIndexF;
-                        uv2i[vertexIndex + 2].y = 0.0f;
+                        uv2i[vertexIndex + 2].y = facingF;
                         uv2i[vertexIndex + 3].x = slotIndexF;
-                        uv2i[vertexIndex + 3].y = 0.0f;
+                        uv2i[vertexIndex + 3].y = facingF;
 						// DEAD MONEY
 
 						if (x1 < bmin.x) bmin.x = x1; // Potential first attachment bounds initialization. Initial min should not block initial max. Same for Y below.
@@ -1074,10 +1075,10 @@ namespace Spine.Unity {
 								else if (y > bmax.y) bmax.y = y;
 
 								// DEAD MONEY
-								// Write slot index to uv2.
+								// Write slot index to uv2.x, facing to uv2.y.
                                 var slotIndexF = (float) slot.Data.Index;
                                 uv2i[vertexIndex].x = slotIndexF;
-                                uv2i[vertexIndex].y = 0f;
+                                uv2i[vertexIndex].y = meshAttachment.Facing;
 								// DEAD MONEY
 
 								vertexIndex++;
