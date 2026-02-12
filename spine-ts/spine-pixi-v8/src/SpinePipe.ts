@@ -46,7 +46,7 @@ const spineBlendModeMap: Record<number, BLEND_MODES> = {
 	3: 'screen'
 };
 
-type GpuSpineDataElement = { slotBatches: Record<string, BatchableSpineSlot> };
+type GpuSpineDataElement = { slotBatches: Record<string, BatchableSpineSlot | undefined> };
 
 // eslint-disable-next-line max-len
 export class SpinePipe implements RenderPipe<Spine> {
@@ -93,8 +93,8 @@ export class SpinePipe implements RenderPipe<Spine> {
 
 					const texture = cacheData.texture;
 
-					if (texture !== batchableSpineSlot.texture) {
-						if (!batchableSpineSlot._batcher.checkAndUpdateTexture(batchableSpineSlot, texture)) {
+					if (texture !== batchableSpineSlot?.texture) {
+						if (!batchableSpineSlot?._batcher.checkAndUpdateTexture(batchableSpineSlot, texture)) {
 							return true;
 						}
 					}
@@ -176,9 +176,9 @@ export class SpinePipe implements RenderPipe<Spine> {
 				const cacheData = spine._getCachedData(slot, attachment);
 
 				if (!cacheData.skipRender) {
-					const batchableSpineSlot = gpuSpine.slotBatches[spine._getCachedData(slot, attachment).id];
-
-					batchableSpineSlot._batcher?.updateElement(batchableSpineSlot);
+					const batchableSpineSlot = gpuSpine.slotBatches[cacheData.id];
+					// we didn't figure out why batchableSpineSlot might be undefined: https://github.com/EsotericSoftware/spine-runtimes/issues/2991
+					batchableSpineSlot?._batcher?.updateElement(batchableSpineSlot);
 				}
 			}
 		}

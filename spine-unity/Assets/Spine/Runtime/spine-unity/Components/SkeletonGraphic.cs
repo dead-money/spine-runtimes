@@ -1024,7 +1024,7 @@ namespace Spine.Unity {
 							usedMaterial = multiplyMaterial;
 						else if (blendMode == BlendMode.Screen && screenMaterial)
 							usedMaterial = screenMaterial;
-						usedMaterialItems[i] = submeshGraphics[i].GetModifiedMaterial(usedMaterial);
+						usedMaterialItems[i] = submeshGraphics[i].UpdateModifiedMaterial(usedMaterial);
 					}
 				} else {
 					Texture originalTexture = submeshMaterial.mainTexture;
@@ -1035,7 +1035,7 @@ namespace Spine.Unity {
 					if (!customTextureOverride.TryGetValue(originalTexture, out usedTexture))
 						usedTexture = originalTexture;
 
-					usedMaterialItems[i] = submeshGraphics[i].GetModifiedMaterial(usedMaterial);
+					usedMaterialItems[i] = submeshGraphics[i].UpdateModifiedMaterial(usedMaterial);
 					usedTextureItems[i] = usedTexture;
 				}
 			}
@@ -1088,7 +1088,8 @@ namespace Spine.Unity {
 					canvasRenderer.SetMesh(null);
 
 				SkeletonSubmeshGraphic submeshGraphic = submeshGraphics[i];
-				if (useOriginalTextureAndMaterial && hasBlendModeMaterials) {
+				if (useOriginalTextureAndMaterial &&
+					(hasBlendModeMaterials || submeshInstructionItem.hasPMAAdditiveSlot)) {
 					bool allowCullTransparentMesh = true;
 					BlendMode materialBlendMode = blendModeMaterials.BlendModeForMaterial(usedMaterialItems[i]);
 					if ((materialBlendMode == BlendMode.Normal && submeshInstructionItem.hasPMAAdditiveSlot) ||
