@@ -37,8 +37,8 @@ namespace Spine {
 		public string Name { get; }
 
 		// DEAD MONEY
-		// Facing direction for F/B body system. 0.0 = back, 1.0 = front.
-		public float Facing { get; set; }
+		// Index into the mask LUT for this attachment's placeholder.
+		public float MaskIndex { get; set; }
 		// DEAD MONEY
 
 		protected Attachment (string name) {
@@ -50,7 +50,7 @@ namespace Spine {
 		protected Attachment (Attachment other) {
 			Name = other.Name;
 			// DEAD MONEY
-			Facing = other.Facing;
+			MaskIndex = other.MaskIndex;
 			// DEAD MONEY
 		}
 

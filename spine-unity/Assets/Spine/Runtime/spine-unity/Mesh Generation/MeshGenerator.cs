@@ -990,17 +990,17 @@ namespace Spine.Unity {
 						ubi[vertexIndex + 3].x = regionUVs[RegionAttachment.URX]; ubi[vertexIndex + 3].y = regionUVs[RegionAttachment.URY];
 
 						// DEAD MONEY
-						// Write slot index to uv2.x, facing to uv2.y.
+						// Write slot index to uv2.x (color LUT), mask index to uv2.y (mask LUT).
                         var slotIndexF = (float) slot.Data.Index;
-                        var facingF = regionAttachment.Facing;
+                        var maskIndexF = regionAttachment.MaskIndex;
                         uv2i[vertexIndex + 0].x = slotIndexF;
-                        uv2i[vertexIndex + 0].y = facingF;
+                        uv2i[vertexIndex + 0].y = maskIndexF;
                         uv2i[vertexIndex + 1].x = slotIndexF;
-                        uv2i[vertexIndex + 1].y = facingF;
+                        uv2i[vertexIndex + 1].y = maskIndexF;
                         uv2i[vertexIndex + 2].x = slotIndexF;
-                        uv2i[vertexIndex + 2].y = facingF;
+                        uv2i[vertexIndex + 2].y = maskIndexF;
                         uv2i[vertexIndex + 3].x = slotIndexF;
-                        uv2i[vertexIndex + 3].y = facingF;
+                        uv2i[vertexIndex + 3].y = maskIndexF;
 						// DEAD MONEY
 
 						if (x1 < bmin.x) bmin.x = x1; // Potential first attachment bounds initialization. Initial min should not block initial max. Same for Y below.
@@ -1075,10 +1075,10 @@ namespace Spine.Unity {
 								else if (y > bmax.y) bmax.y = y;
 
 								// DEAD MONEY
-								// Write slot index to uv2.x, facing to uv2.y.
+								// Write slot index to uv2.x (color LUT), mask index to uv2.y (mask LUT).
                                 var slotIndexF = (float) slot.Data.Index;
                                 uv2i[vertexIndex].x = slotIndexF;
-                                uv2i[vertexIndex].y = meshAttachment.Facing;
+                                uv2i[vertexIndex].y = meshAttachment.MaskIndex;
 								// DEAD MONEY
 
 								vertexIndex++;

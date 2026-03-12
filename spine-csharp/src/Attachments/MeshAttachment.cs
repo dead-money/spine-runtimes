@@ -209,7 +209,7 @@ namespace Spine {
 			mesh.b = b;
 			mesh.a = a;
 			// DEAD MONEY
-			mesh.Facing = Facing;
+			mesh.MaskIndex = MaskIndex;
 			// DEAD MONEY
 			mesh.ParentMesh = parentMesh != null ? parentMesh : this;
 			if (mesh.Region != null) mesh.UpdateRegion();
