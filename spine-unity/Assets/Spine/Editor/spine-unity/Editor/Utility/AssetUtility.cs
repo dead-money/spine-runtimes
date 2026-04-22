@@ -488,7 +488,7 @@ namespace Spine.Unity.Editor {
 
 				if (skeletonGraphic.skeletonDataAsset == null) {
 #if UNITY_6000_5_OR_NEWER
-					int skeletonGraphicID = skeletonGraphic.GetEntityId();
+					EntityId skeletonGraphicID = skeletonGraphic.GetEntityId();
 #else
 					int skeletonGraphicID = skeletonGraphic.GetInstanceID();
 #endif

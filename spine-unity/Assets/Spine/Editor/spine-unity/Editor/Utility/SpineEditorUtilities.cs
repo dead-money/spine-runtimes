@@ -364,10 +364,17 @@ namespace Spine.Unity.Editor {
 		#endregion
 
 		public static class HierarchyHandler {
+#if UNITY_6000_5_OR_NEWER
+			static Dictionary<EntityId, GameObject> skeletonRendererTable = new Dictionary<EntityId, GameObject>();
+			static Dictionary<EntityId, SkeletonUtilityBone> skeletonUtilityBoneTable = new Dictionary<EntityId, SkeletonUtilityBone>();
+			static Dictionary<EntityId, BoundingBoxFollower> boundingBoxFollowerTable = new Dictionary<EntityId, BoundingBoxFollower>();
+			static Dictionary<EntityId, BoundingBoxFollowerGraphic> boundingBoxFollowerGraphicTable = new Dictionary<EntityId, BoundingBoxFollowerGraphic>();
+#else
 			static Dictionary<int, GameObject> skeletonRendererTable = new Dictionary<int, GameObject>();
 			static Dictionary<int, SkeletonUtilityBone> skeletonUtilityBoneTable = new Dictionary<int, SkeletonUtilityBone>();
 			static Dictionary<int, BoundingBoxFollower> boundingBoxFollowerTable = new Dictionary<int, BoundingBoxFollower>();
 			static Dictionary<int, BoundingBoxFollowerGraphic> boundingBoxFollowerGraphicTable = new Dictionary<int, BoundingBoxFollowerGraphic>();
+#endif
 
 #if NEWPLAYMODECALLBACKS
 			internal static void IconsOnPlaymodeStateChanged (PlayModeStateChange stateChange) {
@@ -428,17 +435,14 @@ namespace Spine.Unity.Editor {
 					boundingBoxFollowerGraphicTable[GameObjectId(bbf.gameObject)] = bbf;
 			}
 
-			static int GameObjectId (GameObject go) {
 #if UNITY_6000_5_OR_NEWER
-				return go.GetEntityId();
+			static EntityId GameObjectId (GameObject go) { return go.GetEntityId(); }
 #else
-				return go.GetInstanceID();
+			static int GameObjectId (GameObject go) { return go.GetInstanceID(); }
 #endif
-			}
 
 #if UNITY_6000_5_OR_NEWER
-			internal static void IconsOnGUI (EntityId entityId, Rect selectionRect) {
-				int instanceId = entityId;
+			internal static void IconsOnGUI (EntityId instanceId, Rect selectionRect) {
 #else
 			internal static void IconsOnGUI (int instanceId, Rect selectionRect) {
 #endif

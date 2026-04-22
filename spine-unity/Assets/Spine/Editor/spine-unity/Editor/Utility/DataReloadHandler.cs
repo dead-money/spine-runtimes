@@ -49,7 +49,11 @@ namespace Spine.Unity.Editor {
 	public partial class SpineEditorUtilities {
 		public static class DataReloadHandler {
 
+#if UNITY_6000_5_OR_NEWER
+			internal static Dictionary<EntityId, string> savedSkeletonDataAssetAtSKeletonGraphicID = new Dictionary<EntityId, string>();
+#else
 			internal static Dictionary<int, string> savedSkeletonDataAssetAtSKeletonGraphicID = new Dictionary<int, string>();
+#endif
 
 #if NEWPLAYMODECALLBACKS
 			internal static void OnPlaymodeStateChanged (PlayModeStateChange stateChange) {
@@ -85,7 +89,7 @@ namespace Spine.Unity.Editor {
 					if (skeletonDataAsset != null) {
 						string assetPath = AssetDatabase.GetAssetPath(skeletonDataAsset);
 #if UNITY_6000_5_OR_NEWER
-						int sgID = skeletonGraphic.GetEntityId();
+						EntityId sgID = skeletonGraphic.GetEntityId();
 #else
 						int sgID = skeletonGraphic.GetInstanceID();
 #endif
