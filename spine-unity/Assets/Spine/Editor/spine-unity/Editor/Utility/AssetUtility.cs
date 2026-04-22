@@ -487,7 +487,11 @@ namespace Spine.Unity.Editor {
 			foreach (SkeletonGraphic skeletonGraphic in skeletonGraphicObjects) {
 
 				if (skeletonGraphic.skeletonDataAsset == null) {
+#if UNITY_6000_5_OR_NEWER
+					int skeletonGraphicID = skeletonGraphic.GetEntityId();
+#else
 					int skeletonGraphicID = skeletonGraphic.GetInstanceID();
+#endif
 					if (SpineEditorUtilities.DataReloadHandler.savedSkeletonDataAssetAtSKeletonGraphicID.ContainsKey(skeletonGraphicID)) {
 						string assetPath = SpineEditorUtilities.DataReloadHandler.savedSkeletonDataAssetAtSKeletonGraphicID[skeletonGraphicID];
 						skeletonGraphic.skeletonDataAsset = (SkeletonDataAsset)AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(assetPath);
@@ -589,10 +593,18 @@ namespace Spine.Unity.Editor {
 						if (skeletonDataAtlasAssets != null) {
 							for (int i = 0; i < skeletonDataAtlasAssets.Length; i++) {
 								if (!ReferenceEquals(null, skeletonDataAtlasAssets[i]) &&
-									skeletonDataAtlasAssets[i].Equals(null) &&
-									skeletonDataAtlasAssets[i].GetInstanceID() != 0
+									skeletonDataAtlasAssets[i].Equals(null)
+#if UNITY_6000_5_OR_NEWER
+									&& skeletonDataAtlasAssets[i].GetEntityId().IsValid()
+#else
+									&& skeletonDataAtlasAssets[i].GetInstanceID() != 0
+#endif
 								) {
+#if UNITY_6000_5_OR_NEWER
+									skeletonDataAtlasAssets[i] = EditorUtility.EntityIdToObject(skeletonDataAtlasAssets[i].GetEntityId()) as AtlasAssetBase;
+#else
 									skeletonDataAtlasAssets[i] = EditorUtility.InstanceIDToObject(skeletonDataAtlasAssets[i].GetInstanceID()) as AtlasAssetBase;
+#endif
 								}
 							}
 						}

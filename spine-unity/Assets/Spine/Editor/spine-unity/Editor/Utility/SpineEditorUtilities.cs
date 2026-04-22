@@ -203,7 +203,10 @@ namespace Spine.Unity.Editor {
 			SceneView.onSceneGUIDelegate += DragAndDropInstantiation.SceneViewDragAndDrop;
 #endif
 
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_6000_5_OR_NEWER
+			DragAndDrop.RemoveDropHandlerV2(HierarchyHandler.HandleDragAndDrop);
+			DragAndDrop.AddDropHandlerV2(HierarchyHandler.HandleDragAndDrop);
+#elif UNITY_2021_2_OR_NEWER
 			DragAndDrop.RemoveDropHandler(HierarchyHandler.HandleDragAndDrop);
 			DragAndDrop.AddDropHandler(HierarchyHandler.HandleDragAndDrop);
 #else
@@ -381,7 +384,11 @@ namespace Spine.Unity.Editor {
 #else
 				EditorApplication.hierarchyWindowChanged -= IconsOnChanged;
 #endif
+#if UNITY_6000_5_OR_NEWER
+				EditorApplication.hierarchyWindowItemByEntityIdOnGUI -= IconsOnGUI;
+#else
 				EditorApplication.hierarchyWindowItemOnGUI -= IconsOnGUI;
+#endif
 
 				if (!Application.isPlaying && Preferences.showHierarchyIcons) {
 #if NEWHIERARCHYWINDOWCALLBACKS
@@ -389,7 +396,11 @@ namespace Spine.Unity.Editor {
 #else
 					EditorApplication.hierarchyWindowChanged += IconsOnChanged;
 #endif
+#if UNITY_6000_5_OR_NEWER
+					EditorApplication.hierarchyWindowItemByEntityIdOnGUI += IconsOnGUI;
+#else
 					EditorApplication.hierarchyWindowItemOnGUI += IconsOnGUI;
+#endif
 					IconsOnChanged();
 				}
 			}
@@ -402,22 +413,35 @@ namespace Spine.Unity.Editor {
 
 				SkeletonRenderer[] arr = Object.FindObjectsOfType<SkeletonRenderer>();
 				foreach (SkeletonRenderer r in arr)
-					skeletonRendererTable[r.gameObject.GetInstanceID()] = r.gameObject;
+					skeletonRendererTable[GameObjectId(r.gameObject)] = r.gameObject;
 
 				SkeletonUtilityBone[] boneArr = Object.FindObjectsOfType<SkeletonUtilityBone>();
 				foreach (SkeletonUtilityBone b in boneArr)
-					skeletonUtilityBoneTable[b.gameObject.GetInstanceID()] = b;
+					skeletonUtilityBoneTable[GameObjectId(b.gameObject)] = b;
 
 				BoundingBoxFollower[] bbfArr = Object.FindObjectsOfType<BoundingBoxFollower>();
 				foreach (BoundingBoxFollower bbf in bbfArr)
-					boundingBoxFollowerTable[bbf.gameObject.GetInstanceID()] = bbf;
+					boundingBoxFollowerTable[GameObjectId(bbf.gameObject)] = bbf;
 
 				BoundingBoxFollowerGraphic[] bbfgArr = Object.FindObjectsOfType<BoundingBoxFollowerGraphic>();
 				foreach (BoundingBoxFollowerGraphic bbf in bbfgArr)
-					boundingBoxFollowerGraphicTable[bbf.gameObject.GetInstanceID()] = bbf;
+					boundingBoxFollowerGraphicTable[GameObjectId(bbf.gameObject)] = bbf;
 			}
 
+			static int GameObjectId (GameObject go) {
+#if UNITY_6000_5_OR_NEWER
+				return go.GetEntityId();
+#else
+				return go.GetInstanceID();
+#endif
+			}
+
+#if UNITY_6000_5_OR_NEWER
+			internal static void IconsOnGUI (EntityId entityId, Rect selectionRect) {
+				int instanceId = entityId;
+#else
 			internal static void IconsOnGUI (int instanceId, Rect selectionRect) {
+#endif
 				Rect r = new Rect(selectionRect);
 				if (skeletonRendererTable.ContainsKey(instanceId)) {
 					r.x = r.width - 15;
@@ -460,7 +484,12 @@ namespace Spine.Unity.Editor {
 			}
 
 #if UNITY_2021_2_OR_NEWER
-			internal static DragAndDropVisualMode HandleDragAndDrop (int dropTargetInstanceID, HierarchyDropFlags dropMode, Transform parentForDraggedObjects, bool perform) {
+#if UNITY_6000_5_OR_NEWER
+			internal static DragAndDropVisualMode HandleDragAndDrop (EntityId dropTargetEntityId, HierarchyDropFlags dropMode, Transform parentForDraggedObjects, bool perform)
+#else
+			internal static DragAndDropVisualMode HandleDragAndDrop (int dropTargetInstanceID, HierarchyDropFlags dropMode, Transform parentForDraggedObjects, bool perform)
+#endif
+			{
 				SkeletonDataAsset skeletonDataAsset = DragAndDrop.objectReferences.Length == 0 ? null :
 					DragAndDrop.objectReferences[0] as SkeletonDataAsset;
 				if (skeletonDataAsset == null)
@@ -468,7 +497,11 @@ namespace Spine.Unity.Editor {
 				if (!perform)
 					return DragAndDropVisualMode.Copy;
 
+#if UNITY_6000_5_OR_NEWER
+				GameObject dropTargetObject = UnityEditor.EditorUtility.EntityIdToObject(dropTargetEntityId) as GameObject;
+#else
 				GameObject dropTargetObject = UnityEditor.EditorUtility.InstanceIDToObject(dropTargetInstanceID) as GameObject;
+#endif
 				Transform dropTarget = dropTargetObject != null ? dropTargetObject.transform : null;
 				Transform parent = dropTarget;
 				int siblingIndex = 0;
