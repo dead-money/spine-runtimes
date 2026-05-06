@@ -45,6 +45,7 @@
 #endif
 
 class GodotSpineTextureLoader;
+class SpineAtlasRegion;
 
 class SpineAtlasResource : public Resource {
 	GDCLASS(SpineAtlasResource, Resource)
@@ -97,6 +98,10 @@ public:
 #endif
 
 	String get_source_path();
+
+	Ref<SpineAtlasRegion> find_region(const String &name);
+
+	Array get_regions();
 
 	Array get_textures();
 
