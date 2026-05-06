@@ -28,6 +28,7 @@
  *****************************************************************************/
 
 #include "SpineAtlasResource.h"
+#include "SpineAtlasRegion.h"
 #include "SpineRendererObject.h"
 
 #ifdef SPINE_GODOT_EXTENSION
@@ -241,6 +242,8 @@ void SpineAtlasResource::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_textures"), &SpineAtlasResource::get_textures);
 	ClassDB::bind_method(D_METHOD("get_normal_maps"), &SpineAtlasResource::get_normal_maps);
 	ClassDB::bind_method(D_METHOD("get_specular_maps"), &SpineAtlasResource::get_specular_maps);
+	ClassDB::bind_method(D_METHOD("find_region", "name"), &SpineAtlasResource::find_region);
+	ClassDB::bind_method(D_METHOD("get_regions"), &SpineAtlasResource::get_regions);
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "source_path"), "", "get_source_path");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "textures"), "", "get_textures");
@@ -280,6 +283,27 @@ Array SpineAtlasResource::get_specular_maps() {
 
 String SpineAtlasResource::get_source_path() {
 	return source_path;
+}
+
+Ref<SpineAtlasRegion> SpineAtlasResource::find_region(const String &name) {
+	if (!atlas) return Ref<SpineAtlasRegion>();
+	spine::AtlasRegion *r = atlas->findRegion(SPINE_STRING(name));
+	if (!r) return Ref<SpineAtlasRegion>();
+	Ref<SpineAtlasRegion> wrapper(memnew(SpineAtlasRegion));
+	wrapper->set_region(r);
+	return wrapper;
+}
+
+Array SpineAtlasResource::get_regions() {
+	Array out;
+	if (!atlas) return out;
+	auto &regions = atlas->getRegions();
+	for (size_t i = 0; i < regions.size(); ++i) {
+		Ref<SpineAtlasRegion> wrapper(memnew(SpineAtlasRegion));
+		wrapper->set_region(regions[i]);
+		out.append(wrapper);
+	}
+	return out;
 }
 
 Error SpineAtlasResource::load_from_atlas_file(const String &path) {

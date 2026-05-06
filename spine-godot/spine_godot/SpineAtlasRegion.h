@@ -30,36 +30,34 @@
 #pragma once
 
 #include "SpineCommon.h"
-#include "spine/Attachment.h"
-#include <spine/spine.h>
+#include <spine/Atlas.h>
 
-class SpineAtlasRegion;
-
-class SpineSkeletonDataResource;
-
-class SpineAttachment : public SpineSkeletonDataResourceOwnedObject<spine::Attachment> {
-	GDCLASS(SpineAttachment, SpineObjectWrapper)
+// Lightweight wrapper around spine::AtlasRegion*. AtlasRegions live on the
+// underlying spine::Atlas, owned by SpineAtlasResource — as long as the
+// resource is held alive, the region pointer is stable.
+class SpineAtlasRegion : public REFCOUNTED {
+	GDCLASS(SpineAtlasRegion, REFCOUNTED)
 
 protected:
 	static void _bind_methods();
+	spine::AtlasRegion *region = nullptr;
 
 public:
-	~SpineAttachment() override;
+	void set_region(spine::AtlasRegion *r) { region = r; }
+	spine::AtlasRegion *get_region() const { return region; }
 
-	String get_attachment_name();
-
-	Ref<SpineAttachment> copy();
-
-	// Hommlet patch: rebind a region/mesh attachment's UVs onto a different
-	// atlas region. Mirrors Spine.Unity's Attachment.GetRemappedClone behavior
-	// at the C++ runtime level (RegionAttachment::setRegion + updateRegion()
-	// or MeshAttachment::setRegion + updateRegion(), dispatched via RTTI).
-	// Returns false if the attachment kind has no region (e.g. BoundingBox).
-	bool set_region(Ref<SpineAtlasRegion> region);
-
-	void set_spine_object(const SpineSkeletonDataResource *_owner, spine::Attachment *_object) override {
-		if (get_spine_object()) get_spine_object()->dereference();
-		_set_spine_object_internal(_owner, _object);
-		if (_object) _object->reference();
-	}
+	String get_name() const;
+	int get_x() const;
+	int get_y() const;
+	int get_width() const;
+	int get_height() const;
+	int get_original_width() const;
+	int get_original_height() const;
+	int get_offset_x() const;
+	int get_offset_y() const;
+	float get_u() const;
+	float get_v() const;
+	float get_u2() const;
+	float get_v2() const;
+	int get_degrees() const;
 };

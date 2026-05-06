@@ -46,6 +46,7 @@
 #include "SpineBoneData.h"
 #include "SpineSlotData.h"
 #include "SpineAttachment.h"
+#include "SpineAtlasRegion.h"
 #include "SpineConstraintData.h"
 #include "SpineSkin.h"
 #include "SpineIkConstraintData.h"
@@ -139,6 +140,7 @@ void register_spine_godot_types() {
 	GDREGISTER_CLASS(SpineBoneData);
 	GDREGISTER_CLASS(SpineSlotData);
 	GDREGISTER_CLASS(SpineAttachment);
+	GDREGISTER_CLASS(SpineAtlasRegion);
 	GDREGISTER_CLASS(SpineSkinEntry);
 	GDREGISTER_CLASS(SpineConstraintData);
 	GDREGISTER_CLASS(SpineSkin);

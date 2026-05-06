@@ -28,11 +28,15 @@
  *****************************************************************************/
 
 #include "SpineAttachment.h"
+#include "SpineAtlasRegion.h"
 #include "SpineCommon.h"
+#include <spine/RegionAttachment.h>
+#include <spine/MeshAttachment.h>
 
 void SpineAttachment::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_attachment_name"), &SpineAttachment::get_attachment_name);
 	ClassDB::bind_method(D_METHOD("copy"), &SpineAttachment::copy);
+	ClassDB::bind_method(D_METHOD("set_region", "region"), &SpineAttachment::set_region);
 }
 
 SpineAttachment::~SpineAttachment() {
@@ -57,4 +61,28 @@ Ref<SpineAttachment> SpineAttachment::copy() {
 	Ref<SpineAttachment> attachment_ref(memnew(SpineAttachment));
 	attachment_ref->set_spine_object(get_spine_owner(), copy);
 	return attachment_ref;
+}
+
+bool SpineAttachment::set_region(Ref<SpineAtlasRegion> region) {
+	SPINE_CHECK(get_spine_object(), false)
+	if (region.is_null() || !region->get_region()) return false;
+
+	auto *att = get_spine_object();
+	auto *tex_region = static_cast<spine::TextureRegion *>(region->get_region());
+
+	auto &rtti = att->getRTTI();
+	if (rtti.isExactly(spine::RegionAttachment::rtti)) {
+		auto *r = static_cast<spine::RegionAttachment *>(att);
+		r->setRegion(tex_region);
+		r->updateRegion();
+		return true;
+	}
+	if (rtti.isExactly(spine::MeshAttachment::rtti)) {
+		auto *m = static_cast<spine::MeshAttachment *>(att);
+		m->setRegion(tex_region);
+		m->updateRegion();
+		return true;
+	}
+	// BoundingBox / Path / Point / Clipping — no region.
+	return false;
 }
