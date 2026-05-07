@@ -57,6 +57,11 @@ public:
 	// Returns false if the attachment kind has no region (e.g. BoundingBox).
 	bool set_region(Ref<SpineAtlasRegion> region);
 
+	// DEAD MONEY: per-attachment mask LUT index used by Hommlet's
+	// character.gdshader. Emitted into ARRAY_CUSTOM0.y at mesh build time.
+	float get_mask_index();
+	void set_mask_index(float v);
+
 	void set_spine_object(const SpineSkeletonDataResource *_owner, spine::Attachment *_object) override {
 		if (get_spine_object()) get_spine_object()->dereference();
 		_set_spine_object_internal(_owner, _object);

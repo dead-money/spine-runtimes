@@ -63,11 +63,16 @@ protected:
 	PackedVector2Array uvs;
 	PackedColorArray colors;
 	PackedInt32Array indices;
+	// DEAD MONEY: per-vertex (slotIndex, maskIndex) for the character shader.
+	// Emitted into ARRAY_CUSTOM0 (RG_FLOAT format).
+	PackedVector2Array customs;
 #else
 	Vector<Vector2> vertices;
 	Vector<Vector2> uvs;
 	Vector<Color> colors;
 	Vector<int> indices;
+	// DEAD MONEY
+	Vector<Vector2> customs;
 #endif
 	SpineRendererObject *renderer_object;
 
@@ -120,12 +125,14 @@ public:
 					 const PackedVector2Array &uvs,
 					 const PackedColorArray &colors,
 					 const PackedInt32Array &indices,
+					 const PackedVector2Array &customs,
 					 SpineRendererObject *renderer_object);
 #else
 	void update_mesh(const Vector<Point2> &vertices,
 					 const Vector<Point2> &uvs,
 					 const Vector<Color> &colors,
 					 const Vector<int> &indices,
+					 const Vector<Vector2> &customs,
 					 SpineRendererObject *renderer_object);
 #endif
 };

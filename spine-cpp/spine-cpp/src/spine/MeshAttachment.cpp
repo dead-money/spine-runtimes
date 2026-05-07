@@ -209,6 +209,8 @@ Attachment *MeshAttachment::copy() {
 	copy->setSequence(_sequence != NULL ? _sequence->copy() : NULL);
 	copy->_path = _path;
 	copy->_color.set(_color);
+	// DEAD MONEY: propagate per-attachment mask LUT index.
+	copy->setMaskIndex(getMaskIndex());
 
 	copyTo(copy);
 	copy->_regionUVs.clearAndAddAll(_regionUVs);
@@ -228,6 +230,8 @@ MeshAttachment *MeshAttachment::newLinkedMesh() {
 	copy->setRegion(_region);
 	copy->_path = _path;
 	copy->_color.set(_color);
+	// DEAD MONEY: propagate per-attachment mask LUT index.
+	copy->setMaskIndex(getMaskIndex());
 	copy->_timelineAttachment = this->_timelineAttachment;
 	copy->setParentMesh(_parentMesh ? _parentMesh : this);
 	if (copy->_region) copy->updateRegion();

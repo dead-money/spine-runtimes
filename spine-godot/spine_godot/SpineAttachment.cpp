@@ -37,6 +37,9 @@ void SpineAttachment::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_attachment_name"), &SpineAttachment::get_attachment_name);
 	ClassDB::bind_method(D_METHOD("copy"), &SpineAttachment::copy);
 	ClassDB::bind_method(D_METHOD("set_region", "region"), &SpineAttachment::set_region);
+	// DEAD MONEY: per-attachment mask LUT index (Hommlet character shader).
+	ClassDB::bind_method(D_METHOD("get_mask_index"), &SpineAttachment::get_mask_index);
+	ClassDB::bind_method(D_METHOD("set_mask_index", "v"), &SpineAttachment::set_mask_index);
 }
 
 SpineAttachment::~SpineAttachment() {
@@ -85,4 +88,14 @@ bool SpineAttachment::set_region(Ref<SpineAtlasRegion> region) {
 	}
 	// BoundingBox / Path / Point / Clipping — no region.
 	return false;
+}
+
+float SpineAttachment::get_mask_index() {
+	SPINE_CHECK(get_spine_object(), 0.0f)
+	return get_spine_object()->getMaskIndex();
+}
+
+void SpineAttachment::set_mask_index(float v) {
+	SPINE_CHECK(get_spine_object(), )
+	get_spine_object()->setMaskIndex(v);
 }
