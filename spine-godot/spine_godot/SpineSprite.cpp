@@ -214,6 +214,18 @@ void SpineMesh2D::_notification(int what) {
 }
 
 void SpineMesh2D::_bind_methods() {
+	// DEAD MONEY: expose mesh + texture RIDs for mask-fanout rendering.
+	ClassDB::bind_method(D_METHOD("get_mesh_rid"), &SpineMesh2D::get_mesh_rid);
+	ClassDB::bind_method(D_METHOD("get_texture_rid"), &SpineMesh2D::get_texture_rid);
+}
+
+// DEAD MONEY: out-of-line because SpineRendererObject is forward-declared in
+// the header — full definition is in SpineRendererObject.h, included by .cpp.
+RID SpineMesh2D::get_texture_rid() const {
+	if (renderer_object && renderer_object->canvas_texture.is_valid()) {
+		return renderer_object->canvas_texture->get_rid();
+	}
+	return RID();
 }
 
 #ifdef SPINE_GODOT_EXTENSION
@@ -545,6 +557,32 @@ void SpineSprite::_bind_methods() {
 
 	ADD_GROUP("Preview", "");
 	// Filled in in _get_property_list()
+
+	// DEAD MONEY: per-slot RID accessors for mask-fanout rendering.
+	ClassDB::bind_method(D_METHOD("get_slot_mesh_rids"), &SpineSprite::get_slot_mesh_rids);
+	ClassDB::bind_method(D_METHOD("get_slot_texture_rids"), &SpineSprite::get_slot_texture_rids);
+}
+
+// DEAD MONEY: walk mesh_instances in current draw order and emit Mesh / texture
+// RIDs. Driven by SpineSprite::sort_slot_nodes which keeps mesh_instances aligned
+// with the skeleton's draw order. Empty entries (cleared slots) emit invalid RIDs;
+// callers should skip those.
+Array SpineSprite::get_slot_mesh_rids() const {
+	Array result;
+	for (int i = 0; i < mesh_instances.size(); ++i) {
+		SpineMesh2D *m = mesh_instances[i];
+		result.push_back(m ? m->get_mesh_rid() : RID());
+	}
+	return result;
+}
+
+Array SpineSprite::get_slot_texture_rids() const {
+	Array result;
+	for (int i = 0; i < mesh_instances.size(); ++i) {
+		SpineMesh2D *m = mesh_instances[i];
+		result.push_back(m ? m->get_texture_rid() : RID());
+	}
+	return result;
 }
 
 SpineSprite::SpineSprite()
