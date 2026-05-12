@@ -120,6 +120,16 @@ public:
 	}
 #endif
 
+	// DEAD MONEY: expose the Mesh + texture RIDs so external systems can fan
+	// the same vertex buffer out to additional render targets (e.g. selection
+	// mask / lighting mask viewports) without spawning a duplicate SpineSprite
+	// or re-evaluating the skeleton pose. The RIDs are owned by SpineMesh2D
+	// and re-use the buffer SpineSprite::update_meshes uploads each frame.
+	// (`get_texture_rid` body lives in the .cpp because it dereferences
+	// SpineRendererObject which is forward-declared here.)
+	RID get_mesh_rid() const { return mesh; }
+	RID get_texture_rid() const;
+
 #ifdef SPINE_GODOT_EXTENSION
 	void update_mesh(const PackedVector2Array &vertices,
 					 const PackedVector2Array &uvs,
@@ -199,6 +209,13 @@ protected:
 public:
 	SpineSprite();
 	~SpineSprite();
+
+	// DEAD MONEY: expose the per-slot Mesh + texture RIDs in slot-draw order so
+	// external systems can re-submit the same vertex buffers into additional
+	// render targets (selection mask / lighting mask viewports). Updated each
+	// frame by update_meshes; consumers should read after that runs.
+	Array get_slot_mesh_rids() const;
+	Array get_slot_texture_rids() const;
 
 	void set_skeleton_data_res(const Ref<SpineSkeletonDataResource> &_spine_skeleton_data_resource);
 
