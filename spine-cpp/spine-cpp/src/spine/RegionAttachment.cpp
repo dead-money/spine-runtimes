@@ -271,5 +271,7 @@ Attachment *RegionAttachment::copy() {
 	copy->_vertexOffset.clearAndAddAll(_vertexOffset);
 	copy->_color.set(_color);
 	copy->_sequence = _sequence != NULL ? _sequence->copy() : NULL;
+	// DEAD MONEY: propagate per-attachment mask LUT index.
+	copy->setMaskIndex(getMaskIndex());
 	return copy;
 }

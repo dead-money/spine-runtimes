@@ -163,6 +163,7 @@ static void add_triangles(SpineMesh2D *mesh_instance,
 						  const PackedVector2Array &uvs,
 						  const PackedColorArray &colors,
 						  const PackedInt32Array &indices,
+						  const PackedVector2Array &customs,
 						  SpineRendererObject *renderer_object) {
 #else
 static void add_triangles(SpineMesh2D *mesh_instance,
@@ -170,14 +171,15 @@ static void add_triangles(SpineMesh2D *mesh_instance,
 						  const Vector<Point2> &uvs,
 						  const Vector<Color> &colors,
 						  const Vector<int> &indices,
+						  const Vector<Vector2> &customs,
 						  SpineRendererObject *renderer_object) {
 #endif
 #if VERSION_MAJOR > 3
-	mesh_instance->update_mesh(vertices, uvs, colors, indices, renderer_object);
+	mesh_instance->update_mesh(vertices, uvs, colors, indices, customs, renderer_object);
 #else
 #define USE_MESH 0
 #if USE_MESH
-	mesh_instance->update_mesh(vertices, uvs, colors, indices, renderer_object);
+	mesh_instance->update_mesh(vertices, uvs, colors, indices, customs, renderer_object);
 #else
 	auto texture = renderer_object->texture;
 	auto normal_map = renderer_object->normal_map;
@@ -211,7 +213,7 @@ void SpineMesh2D::_notification(int what) {
 		case NOTIFICATION_DRAW:
 			clear_triangles(this);
 			if (renderer_object)
-				add_triangles(this, vertices, uvs, colors, indices, renderer_object);
+				add_triangles(this, vertices, uvs, colors, indices, customs, renderer_object);
 			break;
 		default:
 			break;
@@ -219,6 +221,18 @@ void SpineMesh2D::_notification(int what) {
 }
 
 void SpineMesh2D::_bind_methods() {
+	// DEAD MONEY: expose mesh + texture RIDs for mask-fanout rendering.
+	ClassDB::bind_method(D_METHOD("get_mesh_rid"), &SpineMesh2D::get_mesh_rid);
+	ClassDB::bind_method(D_METHOD("get_texture_rid"), &SpineMesh2D::get_texture_rid);
+}
+
+// DEAD MONEY: out-of-line because SpineRendererObject is forward-declared in
+// the header — full definition is in SpineRendererObject.h, included by .cpp.
+RID SpineMesh2D::get_texture_rid() const {
+	if (renderer_object && renderer_object->canvas_texture.is_valid()) {
+		return renderer_object->canvas_texture->get_rid();
+	}
+	return RID();
 }
 
 #ifdef SPINE_GODOT_EXTENSION
@@ -226,6 +240,7 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices,
 							  const PackedVector2Array &uvs,
 							  const PackedColorArray &colors,
 							  const PackedInt32Array &indices,
+							  const PackedVector2Array &customs,
 							  SpineRendererObject *renderer_object) {
 	if (!mesh.is_valid() || vertices.size() != num_vertices || indices.size() != num_indices || indices_changed) {
 		if (mesh.is_valid()) {
@@ -238,12 +253,26 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices,
 		arrays[Mesh::ARRAY_TEX_UV] = uvs;
 		arrays[Mesh::ARRAY_COLOR] = colors;
 		arrays[Mesh::ARRAY_INDEX] = indices;
-		RS::get_singleton()->mesh_add_surface_from_arrays(mesh, RS::PrimitiveType::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), RS::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE);
+		// DEAD MONEY: ARRAY_CUSTOM0 carries (slotIndex, maskIndex) per vertex
+		// in RG_FLOAT format. Hommlet character.gdshader reads CUSTOM0.xy.
+		PackedFloat32Array custom_data;
+		custom_data.resize(vertices.size() * 2);
+		float *cd = custom_data.ptrw();
+		for (int i = 0; i < vertices.size(); i++) {
+			cd[i * 2 + 0] = (float) customs[i].x;
+			cd[i * 2 + 1] = (float) customs[i].y;
+		}
+		arrays[Mesh::ARRAY_CUSTOM0] = custom_data;
+		uint64_t fmt = RS::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE
+			| RS::ArrayFormat::ARRAY_FORMAT_CUSTOM0
+			| ((uint64_t) RS::ArrayCustomFormat::ARRAY_CUSTOM_RG_FLOAT << RS::ArrayFormat::ARRAY_FORMAT_CUSTOM0_SHIFT);
+		RS::get_singleton()->mesh_add_surface_from_arrays(mesh, RS::PrimitiveType::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), fmt);
 		Dictionary surface = RS::get_singleton()->mesh_get_surface(mesh, 0);
 		RS::ArrayFormat surface_format = (RS::ArrayFormat) static_cast<int64_t>(surface["format"]);
 		surface_offsets[RS::ARRAY_VERTEX] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_VERTEX);
 		surface_offsets[RS::ARRAY_COLOR] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_COLOR);
 		surface_offsets[RS::ARRAY_TEX_UV] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_TEX_UV);
+		surface_offsets[RS::ARRAY_CUSTOM0] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_CUSTOM0);
 		vertex_stride = RS::get_singleton()->mesh_surface_get_format_vertex_stride(surface_format, vertices.size());
 		attribute_stride = RS::get_singleton()->mesh_surface_get_format_attribute_stride(surface_format, vertices.size());
 		vertex_buffer = surface["vertex_data"];
@@ -271,9 +300,11 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices,
 			}
 
 			float uv[2] = {(float) uvs[i].x, (float) uvs[i].y};
+			float custom[2] = {(float) customs[i].x, (float) customs[i].y};
 			memcpy(&vertex_write_buffer[i * vertex_stride + surface_offsets[RS::ARRAY_VERTEX]], &vertex, sizeof(float) * 2);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_COLOR]], color, 4);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_TEX_UV]], uv, 8);
+			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_CUSTOM0]], custom, 8);
 		}
 		RS::get_singleton()->mesh_surface_update_vertex_region(mesh, 0, 0, vertex_buffer);
 		RS::get_singleton()->mesh_surface_update_attribute_region(mesh, 0, 0, attribute_buffer);
@@ -287,6 +318,7 @@ void SpineMesh2D::update_mesh(const Vector<Point2> &vertices,
 							  const Vector<Point2> &uvs,
 							  const Vector<Color> &colors,
 							  const Vector<int> &indices,
+							  const Vector<Vector2> &customs,
 							  SpineRendererObject *renderer_object) {
 #if VERSION_MAJOR > 3
 	if (!mesh.is_valid() || vertices.size() != num_vertices || indices.size() != num_indices || indices_changed) {
@@ -304,9 +336,21 @@ void SpineMesh2D::update_mesh(const Vector<Point2> &vertices,
 		arrays[Mesh::ARRAY_TEX_UV] = uvs;
 		arrays[Mesh::ARRAY_COLOR] = colors;
 		arrays[Mesh::ARRAY_INDEX] = indices;
+		// DEAD MONEY: ARRAY_CUSTOM0 with RG_FLOAT (slotIndex, maskIndex).
+		PackedFloat32Array custom_data;
+		custom_data.resize(vertices.size() * 2);
+		float *cd = custom_data.ptrw();
+		for (int i = 0; i < vertices.size(); i++) {
+			cd[i * 2 + 0] = (float) customs[i].x;
+			cd[i * 2 + 1] = (float) customs[i].y;
+		}
+		arrays[Mesh::ARRAY_CUSTOM0] = custom_data;
+		uint64_t fmt = Mesh::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE
+			| Mesh::ArrayFormat::ARRAY_FORMAT_CUSTOM0
+			| ((uint64_t) Mesh::ArrayCustomFormat::ARRAY_CUSTOM_RG_FLOAT << Mesh::ArrayFormat::ARRAY_FORMAT_CUSTOM0_SHIFT);
 		RS::SurfaceData surface;
 		uint32_t skin_stride;
-		RS::get_singleton()->mesh_create_surface_data_from_arrays(&surface, (RS::PrimitiveType) Mesh::PRIMITIVE_TRIANGLES, arrays, TypedArray<Array>(), Dictionary(), Mesh::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE);
+		RS::get_singleton()->mesh_create_surface_data_from_arrays(&surface, (RS::PrimitiveType) Mesh::PRIMITIVE_TRIANGLES, arrays, TypedArray<Array>(), Dictionary(), fmt);
 		RS::get_singleton()->mesh_add_surface(mesh, surface);
 #if VERSION_MINOR > 1
 		RS::get_singleton()->mesh_surface_make_offsets_from_format(surface.format, surface.vertex_count, surface.index_count, surface_offsets, vertex_stride, normal_tangent_stride, attribute_stride, skin_stride);
@@ -338,9 +382,11 @@ void SpineMesh2D::update_mesh(const Vector<Point2> &vertices,
 			}
 
 			float uv[2] = {(float) uvs[i].x, (float) uvs[i].y};
+			float custom[2] = {(float) customs[i].x, (float) customs[i].y};
 			memcpy(&vertex_write_buffer[i * vertex_stride + surface_offsets[RS::ARRAY_VERTEX]], &vertex, sizeof(float) * 2);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_COLOR]], color, 4);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_TEX_UV]], uv, 8);
+			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_CUSTOM0]], custom, 8);
 		}
 		RS::get_singleton()->mesh_surface_update_vertex_region(mesh, 0, 0, vertex_buffer);
 		RS::get_singleton()->mesh_surface_update_attribute_region(mesh, 0, 0, attribute_buffer);
@@ -512,6 +558,32 @@ void SpineSprite::_bind_methods() {
 
 	ADD_GROUP("Preview", "");
 	// Filled in in _get_property_list()
+
+	// DEAD MONEY: per-slot RID accessors for mask-fanout rendering.
+	ClassDB::bind_method(D_METHOD("get_slot_mesh_rids"), &SpineSprite::get_slot_mesh_rids);
+	ClassDB::bind_method(D_METHOD("get_slot_texture_rids"), &SpineSprite::get_slot_texture_rids);
+}
+
+// DEAD MONEY: walk mesh_instances in current draw order and emit Mesh / texture
+// RIDs. Driven by SpineSprite::sort_slot_nodes which keeps mesh_instances aligned
+// with the skeleton's draw order. Empty entries (cleared slots) emit invalid RIDs;
+// callers should skip those.
+Array SpineSprite::get_slot_mesh_rids() const {
+	Array result;
+	for (int i = 0; i < mesh_instances.size(); ++i) {
+		SpineMesh2D *m = mesh_instances[i];
+		result.push_back(m ? m->get_mesh_rid() : RID());
+	}
+	return result;
+}
+
+Array SpineSprite::get_slot_texture_rids() const {
+	Array result;
+	for (int i = 0; i < mesh_instances.size(); ++i) {
+		SpineMesh2D *m = mesh_instances[i];
+		result.push_back(m ? m->get_texture_rid() : RID());
+	}
+	return result;
 }
 
 SpineSprite::SpineSprite() : update_mode(SpineConstant::UpdateMode_Process), time_scale(1.0), preview_skin("Default"), preview_animation("-- Empty --"), preview_frame(false), preview_time(0), skeleton_clipper(nullptr), modified_bones(false) {
@@ -926,6 +998,17 @@ void SpineSprite::update_meshes(Ref<SpineSkeleton> skeleton_ref) {
 			mesh_instance->colors.resize((int) num_vertices);
 			for (int j = 0; j < (int) num_vertices; j++) {
 				mesh_instance->colors.set(j, Color(tint.r, tint.g, tint.b, tint.a));
+			}
+
+			// DEAD MONEY: per-vertex (slotIndex, maskIndex) into ARRAY_CUSTOM0.
+			// Hommlet's character.gdshader reads CUSTOM0.xy at fragment time
+			// for slot color LUT + mask LUT lookups. Mirrors the spine-unity
+			// MeshGenerator.cs DEAD MONEY uv2 emit.
+			float slot_index_f = (float) slot->getData().getIndex();
+			float mask_index_f = attachment->getMaskIndex();
+			mesh_instance->customs.resize((int) num_vertices);
+			for (int j = 0; j < (int) num_vertices; j++) {
+				mesh_instance->customs.set(j, Vector2(slot_index_f, mask_index_f));
 			}
 
 			auto indices_changed = false;

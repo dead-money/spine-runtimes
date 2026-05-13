@@ -68,6 +68,20 @@ Run the following command to download godot-cpp:
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
 env.Append(CPPDEFINES=["SPINE_GODOT_EXTENSION"])
+
+# DEAD MONEY: mirror the canonical spine-cpp into the vendored location the
+# build expects. The vendored tree is gitignored, so fork patches to
+# ../spine-cpp/spine-cpp would otherwise never reach the compiler.
+import shutil
+_spine_cpp_src = os.path.join("..", "spine-cpp", "spine-cpp")
+_spine_cpp_dst = os.path.join("spine_godot", "spine-cpp")
+if os.path.isdir(_spine_cpp_src):
+    for _sub in ("include", "src"):
+        _s = os.path.join(_spine_cpp_src, _sub)
+        _d = os.path.join(_spine_cpp_dst, _sub)
+        if os.path.isdir(_s):
+            shutil.copytree(_s, _d, dirs_exist_ok=True)
+
 env.Append(CPPPATH=["spine_godot", "spine_godot/spine-cpp/include"])
 
 # Set iOS minimum deployment target
