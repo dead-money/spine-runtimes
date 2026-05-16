@@ -50,23 +50,23 @@ String SpineAtlasRegion::get_name() const {
 	if (!region) return String();
 	String name;
 #if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
-	name = String::utf8(region->name.buffer());
+	name = String::utf8(region->getName().buffer());
 #else
-	name.parse_utf8(region->name.buffer());
+	name.parse_utf8(region->getName().buffer());
 #endif
 	return name;
 }
 
-int SpineAtlasRegion::get_x() const { return region ? region->x : 0; }
-int SpineAtlasRegion::get_y() const { return region ? region->y : 0; }
-int SpineAtlasRegion::get_width() const { return region ? region->width : 0; }
-int SpineAtlasRegion::get_height() const { return region ? region->height : 0; }
-int SpineAtlasRegion::get_original_width() const { return region ? region->originalWidth : 0; }
-int SpineAtlasRegion::get_original_height() const { return region ? region->originalHeight : 0; }
-int SpineAtlasRegion::get_offset_x() const { return region ? (int)region->offsetX : 0; }
-int SpineAtlasRegion::get_offset_y() const { return region ? (int)region->offsetY : 0; }
-float SpineAtlasRegion::get_u() const { return region ? region->u : 0.0f; }
-float SpineAtlasRegion::get_v() const { return region ? region->v : 0.0f; }
-float SpineAtlasRegion::get_u2() const { return region ? region->u2 : 0.0f; }
-float SpineAtlasRegion::get_v2() const { return region ? region->v2 : 0.0f; }
-int SpineAtlasRegion::get_degrees() const { return region ? region->degrees : 0; }
+int SpineAtlasRegion::get_x() const { return region ? region->getX() : 0; }
+int SpineAtlasRegion::get_y() const { return region ? region->getY() : 0; }
+int SpineAtlasRegion::get_width() const { return region ? region->getPackedWidth() : 0; }
+int SpineAtlasRegion::get_height() const { return region ? region->getPackedHeight() : 0; }
+int SpineAtlasRegion::get_original_width() const { return region ? region->getOriginalWidth() : 0; }
+int SpineAtlasRegion::get_original_height() const { return region ? region->getOriginalHeight() : 0; }
+int SpineAtlasRegion::get_offset_x() const { return region ? (int) region->getOffsetX() : 0; }
+int SpineAtlasRegion::get_offset_y() const { return region ? (int) region->getOffsetY() : 0; }
+float SpineAtlasRegion::get_u() const { return region ? region->getU() : 0.0f; }
+float SpineAtlasRegion::get_v() const { return region ? region->getV() : 0.0f; }
+float SpineAtlasRegion::get_u2() const { return region ? region->getU2() : 0.0f; }
+float SpineAtlasRegion::get_v2() const { return region ? region->getV2() : 0.0f; }
+int SpineAtlasRegion::get_degrees() const { return region ? region->getDegrees() : 0; }

@@ -72,17 +72,24 @@ bool SpineAttachment::set_region(Ref<SpineAtlasRegion> region) {
 	auto *att = get_spine_object();
 	auto *tex_region = static_cast<spine::TextureRegion *>(region->get_region());
 
+	// 4.3 moved per-attachment region storage onto Sequence. Rebind by
+	// overwriting every entry in the Sequence's regions array with the new
+	// region and refreshing the cached UVs/offsets via Sequence::update().
 	auto &rtti = att->getRTTI();
 	if (rtti.isExactly(spine::RegionAttachment::rtti)) {
 		auto *r = static_cast<spine::RegionAttachment *>(att);
-		r->setRegion(tex_region);
-		r->updateRegion();
+		auto &seq = r->getSequence();
+		auto &regions = seq.getRegions();
+		for (size_t i = 0; i < regions.size(); i++) regions[i] = tex_region;
+		seq.update(*r);
 		return true;
 	}
 	if (rtti.isExactly(spine::MeshAttachment::rtti)) {
 		auto *m = static_cast<spine::MeshAttachment *>(att);
-		m->setRegion(tex_region);
-		m->updateRegion();
+		auto &seq = m->getSequence();
+		auto &regions = seq.getRegions();
+		for (size_t i = 0; i < regions.size(); i++) regions[i] = tex_region;
+		seq.update(*m);
 		return true;
 	}
 	// BoundingBox / Path / Point / Clipping — no region.
