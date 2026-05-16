@@ -144,6 +144,7 @@ Attachment &MeshAttachment::copy() {
 	MeshAttachment *copy = new (__FILE__, __LINE__) MeshAttachment(getName(), new (__FILE__, __LINE__) Sequence(*_sequence));
 	copy->_path = _path;
 	copy->_color.set(_color);
+	copy->setMaskIndex(getMaskIndex());
 	copyTo(*copy);
 	copy->_regionUVs.clearAndAddAll(_regionUVs);
 	copy->_triangles.clearAndAddAll(_triangles);
@@ -159,6 +160,7 @@ MeshAttachment &MeshAttachment::newLinkedMesh() {
 	copy->setTimelineAttachment(getTimelineAttachment());
 	copy->_path = _path;
 	copy->_color.set(_color);
+	copy->setMaskIndex(getMaskIndex());
 	copy->setSourceMesh(_sourceMesh != NULL ? _sourceMesh : this);
 	copy->updateSequence();
 	return *copy;

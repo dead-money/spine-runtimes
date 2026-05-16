@@ -162,17 +162,17 @@ static void clear_triangles(SpineMesh2D *mesh_instance) {
 
 #ifdef SPINE_GODOT_EXTENSION
 static void add_triangles(SpineMesh2D *mesh_instance, const PackedVector2Array &vertices, const PackedVector2Array &uvs,
-						  const PackedColorArray &colors, const PackedInt32Array &indices, SpineRendererObject *renderer_object) {
+						  const PackedColorArray &colors, const PackedInt32Array &indices, const PackedVector2Array &customs, SpineRendererObject *renderer_object) {
 #else
 static void add_triangles(SpineMesh2D *mesh_instance, const Vector<Point2> &vertices, const Vector<Point2> &uvs, const Vector<Color> &colors,
-						  const Vector<int> &indices, SpineRendererObject *renderer_object) {
+						  const Vector<int> &indices, const Vector<Vector2> &customs, SpineRendererObject *renderer_object) {
 #endif
 #if VERSION_MAJOR > 3
-	mesh_instance->update_mesh(vertices, uvs, colors, indices, renderer_object);
+	mesh_instance->update_mesh(vertices, uvs, colors, indices, customs, renderer_object);
 #else
 #define USE_MESH 0
 #if USE_MESH
-	mesh_instance->update_mesh(vertices, uvs, colors, indices, renderer_object);
+	mesh_instance->update_mesh(vertices, uvs, colors, indices, customs, renderer_object);
 #else
 	auto texture = renderer_object->texture;
 	auto normal_map = renderer_object->normal_map;
@@ -206,7 +206,7 @@ void SpineMesh2D::_notification(int what) {
 			break;
 		case NOTIFICATION_DRAW:
 			clear_triangles(this);
-			if (renderer_object) add_triangles(this, vertices, uvs, colors, indices, renderer_object);
+			if (renderer_object) add_triangles(this, vertices, uvs, colors, indices, customs, renderer_object);
 			break;
 		default:
 			break;
@@ -218,7 +218,7 @@ void SpineMesh2D::_bind_methods() {
 
 #ifdef SPINE_GODOT_EXTENSION
 void SpineMesh2D::update_mesh(const PackedVector2Array &vertices, const PackedVector2Array &uvs, const PackedColorArray &colors,
-							  const PackedInt32Array &indices, SpineRendererObject *renderer_object) {
+							  const PackedInt32Array &indices, const PackedVector2Array &customs, SpineRendererObject *renderer_object) {
 	if (!mesh.is_valid() || vertices.size() != num_vertices || indices.size() != num_indices || indices_changed) {
 		if (mesh.is_valid()) {
 			RS::get_singleton()->free_rid(mesh);
@@ -230,13 +230,24 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices, const PackedVe
 		arrays[Mesh::ARRAY_TEX_UV] = uvs;
 		arrays[Mesh::ARRAY_COLOR] = colors;
 		arrays[Mesh::ARRAY_INDEX] = indices;
-		RS::get_singleton()->mesh_add_surface_from_arrays(mesh, RS::PrimitiveType::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(),
-														  RS::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE);
+		PackedFloat32Array custom_data;
+		custom_data.resize(vertices.size() * 2);
+		float *cd = custom_data.ptrw();
+		for (int i = 0; i < vertices.size(); i++) {
+			cd[i * 2 + 0] = (float) customs[i].x;
+			cd[i * 2 + 1] = (float) customs[i].y;
+		}
+		arrays[Mesh::ARRAY_CUSTOM0] = custom_data;
+		uint64_t fmt = RS::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE
+			| RS::ArrayFormat::ARRAY_FORMAT_CUSTOM0
+			| ((uint64_t) RS::ArrayCustomFormat::ARRAY_CUSTOM_RG_FLOAT << RS::ArrayFormat::ARRAY_FORMAT_CUSTOM0_SHIFT);
+		RS::get_singleton()->mesh_add_surface_from_arrays(mesh, RS::PrimitiveType::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), fmt);
 		Dictionary surface = RS::get_singleton()->mesh_get_surface(mesh, 0);
 		RS::ArrayFormat surface_format = (RS::ArrayFormat) static_cast<int64_t>(surface["format"]);
 		surface_offsets[RS::ARRAY_VERTEX] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_VERTEX);
 		surface_offsets[RS::ARRAY_COLOR] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_COLOR);
 		surface_offsets[RS::ARRAY_TEX_UV] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_TEX_UV);
+		surface_offsets[RS::ARRAY_CUSTOM0] = RS::get_singleton()->mesh_surface_get_format_offset(surface_format, vertices.size(), RS::ARRAY_CUSTOM0);
 		vertex_stride = RS::get_singleton()->mesh_surface_get_format_vertex_stride(surface_format, vertices.size());
 		attribute_stride = RS::get_singleton()->mesh_surface_get_format_attribute_stride(surface_format, vertices.size());
 		vertex_buffer = surface["vertex_data"];
@@ -261,9 +272,11 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices, const PackedVe
 			}
 
 			float uv[2] = {(float) uvs[i].x, (float) uvs[i].y};
+			float custom[2] = {(float) customs[i].x, (float) customs[i].y};
 			memcpy(&vertex_write_buffer[i * vertex_stride + surface_offsets[RS::ARRAY_VERTEX]], &vertex, sizeof(float) * 2);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_COLOR]], color, 4);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_TEX_UV]], uv, 8);
+			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_CUSTOM0]], custom, 8);
 		}
 		RS::get_singleton()->mesh_surface_update_vertex_region(mesh, 0, 0, vertex_buffer);
 		RS::get_singleton()->mesh_surface_update_attribute_region(mesh, 0, 0, attribute_buffer);
@@ -275,7 +288,7 @@ void SpineMesh2D::update_mesh(const PackedVector2Array &vertices, const PackedVe
 }
 #else
 void SpineMesh2D::update_mesh(const Vector<Point2> &vertices, const Vector<Point2> &uvs, const Vector<Color> &colors, const Vector<int> &indices,
-							  SpineRendererObject *renderer_object) {
+							  const Vector<Vector2> &customs, SpineRendererObject *renderer_object) {
 #if VERSION_MAJOR > 3
 	if (!mesh.is_valid() || vertices.size() != num_vertices || indices.size() != num_indices || indices_changed) {
 		if (mesh.is_valid()) {
@@ -292,11 +305,21 @@ void SpineMesh2D::update_mesh(const Vector<Point2> &vertices, const Vector<Point
 		arrays[Mesh::ARRAY_TEX_UV] = uvs;
 		arrays[Mesh::ARRAY_COLOR] = colors;
 		arrays[Mesh::ARRAY_INDEX] = indices;
+		PackedFloat32Array custom_data;
+		custom_data.resize(vertices.size() * 2);
+		float *cd = custom_data.ptrw();
+		for (int i = 0; i < vertices.size(); i++) {
+			cd[i * 2 + 0] = (float) customs[i].x;
+			cd[i * 2 + 1] = (float) customs[i].y;
+		}
+		arrays[Mesh::ARRAY_CUSTOM0] = custom_data;
+		uint64_t fmt = Mesh::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE
+			| Mesh::ArrayFormat::ARRAY_FORMAT_CUSTOM0
+			| ((uint64_t) Mesh::ArrayCustomFormat::ARRAY_CUSTOM_RG_FLOAT << Mesh::ArrayFormat::ARRAY_FORMAT_CUSTOM0_SHIFT);
 		RS::SurfaceData surface;
 		uint32_t skin_stride;
 		RS::get_singleton()->mesh_create_surface_data_from_arrays(&surface, (RS::PrimitiveType) Mesh::PRIMITIVE_TRIANGLES, arrays,
-																  TypedArray<Array>(), Dictionary(),
-																  Mesh::ArrayFormat::ARRAY_FLAG_USE_DYNAMIC_UPDATE);
+																  TypedArray<Array>(), Dictionary(), fmt);
 		RS::get_singleton()->mesh_add_surface(mesh, surface);
 #if VERSION_MINOR > 1
 		RS::get_singleton()->mesh_surface_make_offsets_from_format(surface.format, surface.vertex_count, surface.index_count, surface_offsets,
@@ -327,9 +350,11 @@ void SpineMesh2D::update_mesh(const Vector<Point2> &vertices, const Vector<Point
 			}
 
 			float uv[2] = {(float) uvs[i].x, (float) uvs[i].y};
+			float custom[2] = {(float) customs[i].x, (float) customs[i].y};
 			memcpy(&vertex_write_buffer[i * vertex_stride + surface_offsets[RS::ARRAY_VERTEX]], &vertex, sizeof(float) * 2);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_COLOR]], color, 4);
 			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_TEX_UV]], uv, 8);
+			memcpy(&attribute_write_buffer[i * attribute_stride + surface_offsets[RS::ARRAY_CUSTOM0]], custom, 8);
 		}
 		RS::get_singleton()->mesh_surface_update_vertex_region(mesh, 0, 0, vertex_buffer);
 		RS::get_singleton()->mesh_surface_update_attribute_region(mesh, 0, 0, attribute_buffer);
@@ -935,6 +960,13 @@ void SpineSprite::update_meshes(Ref<SpineSkeleton> skeleton_ref) {
 			mesh_instance->colors.resize((int) num_vertices);
 			for (int j = 0; j < (int) num_vertices; j++) {
 				mesh_instance->colors.set(j, Color(tint.r, tint.g, tint.b, tint.a));
+			}
+
+			float slot_index_f = (float) slot->getData().getIndex();
+			float mask_index_f = attachment->getMaskIndex();
+			mesh_instance->customs.resize((int) num_vertices);
+			for (int j = 0; j < (int) num_vertices; j++) {
+				mesh_instance->customs.set(j, Vector2(slot_index_f, mask_index_f));
 			}
 
 			auto indices_changed = false;

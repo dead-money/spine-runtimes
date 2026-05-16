@@ -186,6 +186,7 @@ Attachment &RegionAttachment::copy() {
 	copy->_width = _width;
 	copy->_height = _height;
 	copy->_color.set(_color);
+	copy->setMaskIndex(getMaskIndex());
 	return *copy;
 }
 

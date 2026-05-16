@@ -70,11 +70,19 @@ namespace spine {
 
 		void dereference();
 
+		// DEAD MONEY: index into a per-character mask LUT used by Hommlet's
+		// character shader. Populated by Hommlet at runtime skin assembly
+		// (CharacterBody.SetAttachmentOnSkin) and emitted per-vertex via
+		// SpineSprite mesh generation into ARRAY_CUSTOM0.y. Default 0.
+		float getMaskIndex() const { return _maskIndex; }
+		void setMaskIndex(float v) { _maskIndex = v; }
+
 	private:
 		const String _name;
 		Attachment *_timelineAttachment;
 		Array<int> _timelineSlots;
 		int _refCount;
+		float _maskIndex = 0.0f;
 	};
 }
 

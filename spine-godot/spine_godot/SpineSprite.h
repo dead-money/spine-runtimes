@@ -63,11 +63,13 @@ protected:
 	PackedVector2Array uvs;
 	PackedColorArray colors;
 	PackedInt32Array indices;
+	PackedVector2Array customs;
 #else
 	Vector<Vector2> vertices;
 	Vector<Vector2> uvs;
 	Vector<Color> colors;
 	Vector<int> indices;
+	Vector<Vector2> customs;
 #endif
 	SpineRendererObject *renderer_object;
 
@@ -119,10 +121,10 @@ public:
 
 #ifdef SPINE_GODOT_EXTENSION
 	void update_mesh(const PackedVector2Array &vertices, const PackedVector2Array &uvs, const PackedColorArray &colors,
-					 const PackedInt32Array &indices, SpineRendererObject *renderer_object);
+					 const PackedInt32Array &indices, const PackedVector2Array &customs, SpineRendererObject *renderer_object);
 #else
 	void update_mesh(const Vector<Point2> &vertices, const Vector<Point2> &uvs, const Vector<Color> &colors, const Vector<int> &indices,
-					 SpineRendererObject *renderer_object);
+					 const Vector<Vector2> &customs, SpineRendererObject *renderer_object);
 #endif
 };
 
