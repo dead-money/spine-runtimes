@@ -62,6 +62,7 @@ void SpineSkeleton::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bounds"), &SpineSkeleton::get_bounds);
 	ClassDB::bind_method(D_METHOD("get_collision_bounds"), &SpineSkeleton::get_collision_bounds);
 	ClassDB::bind_method(D_METHOD("collision_contains_point", "point"), &SpineSkeleton::collision_contains_point);
+	ClassDB::bind_method(D_METHOD("get_collision_polygons"), &SpineSkeleton::get_collision_polygons);
 	ClassDB::bind_method(D_METHOD("get_root_bone"), &SpineSkeleton::get_root_bone);
 	ClassDB::bind_method(D_METHOD("get_data"), &SpineSkeleton::get_skeleton_data_res);
 	ClassDB::bind_method(D_METHOD("get_bones"), &SpineSkeleton::get_bones);
@@ -268,6 +269,25 @@ bool SpineSkeleton::collision_contains_point(Vector2 point) {
 	if (collision_bounds.getBoundingBoxes().size() == 0) return false;
 	if (!collision_bounds.aabbContainsPoint(point.x, point.y)) return false;
 	return collision_bounds.containsPoint(point.x, point.y) != nullptr;
+}
+
+Array SpineSkeleton::get_collision_polygons() {
+	Array out;
+	SPINE_CHECK(skeleton, out)
+	collision_bounds.update(*skeleton, true);
+	auto &polys = collision_bounds.getPolygons();
+	for (size_t i = 0; i < polys.size(); i++) {
+		auto *poly = polys[i];
+		int vert_count = poly->_count / 2;
+		PackedVector2Array verts;
+		verts.resize(vert_count);
+		auto *write = verts.ptrw();
+		for (int j = 0; j < vert_count; j++) {
+			write[j] = Vector2(poly->_vertices[j * 2], poly->_vertices[j * 2 + 1]);
+		}
+		out.push_back(verts);
+	}
+	return out;
 }
 
 Ref<SpineBone> SpineSkeleton::get_root_bone() {

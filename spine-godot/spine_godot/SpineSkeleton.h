@@ -125,14 +125,17 @@ public:
 
 	Rect2 get_bounds();
 
-	// Hommlet: walk visible BoundingBoxAttachments and return their union AABB in
-	// skeleton-local space. Returns a zero-size rect if the rig has no bounding
-	// boxes, so callers can fall back to a per-def AABB.
+	// Hommlet: union AABB of visible BoundingBoxAttachments in skeleton-local
+	// space. Zero-size rect when the skeleton has none.
 	Rect2 get_collision_bounds();
 
-	// Hommlet: point-in-any-polygon hit test against visible BoundingBoxAttachments.
-	// Point is in skeleton-local space. Returns false if no bounding boxes exist.
+	// Hommlet: point-in-any-polygon against visible BoundingBoxAttachments. Point
+	// is in skeleton-local space. False when the skeleton has none.
 	bool collision_contains_point(Vector2 point);
+
+	// Hommlet: visible BoundingBoxAttachment polygons as an array of
+	// PackedVector2Array, each in skeleton-local space. Empty when none.
+	Array get_collision_polygons();
 
 	Ref<SpineBone> get_root_bone();
 
