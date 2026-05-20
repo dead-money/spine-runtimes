@@ -34,6 +34,7 @@
 #include "SpineBone.h"
 #include "SpineSlot.h"
 
+#include <spine/SkeletonBounds.h>
 #include <unordered_map>
 
 // Forward declarations to avoid circular includes
@@ -80,6 +81,7 @@ private:
 	spine::Skeleton *skeleton;
 	SpineSprite *sprite;
 	spine::Array<float> bounds_vertex_buffer;
+	spine::SkeletonBounds collision_bounds;
 	Ref<SpineSkin> last_skin;
 
 	std::unordered_map<spine::Bone *, Ref<SpineBone>> _cached_bones;
@@ -122,6 +124,15 @@ public:
 	Ref<SpineSlider> find_slider(const String &slider_name);
 
 	Rect2 get_bounds();
+
+	// Hommlet: walk visible BoundingBoxAttachments and return their union AABB in
+	// skeleton-local space. Returns a zero-size rect if the rig has no bounding
+	// boxes, so callers can fall back to a per-def AABB.
+	Rect2 get_collision_bounds();
+
+	// Hommlet: point-in-any-polygon hit test against visible BoundingBoxAttachments.
+	// Point is in skeleton-local space. Returns false if no bounding boxes exist.
+	bool collision_contains_point(Vector2 point);
 
 	Ref<SpineBone> get_root_bone();
 

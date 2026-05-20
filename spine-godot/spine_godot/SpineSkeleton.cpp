@@ -60,6 +60,8 @@ void SpineSkeleton::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("find_physics_constraint", "constraint_name"), &SpineSkeleton::find_physics_constraint);
 	ClassDB::bind_method(D_METHOD("find_slider", "slider_name"), &SpineSkeleton::find_slider);
 	ClassDB::bind_method(D_METHOD("get_bounds"), &SpineSkeleton::get_bounds);
+	ClassDB::bind_method(D_METHOD("get_collision_bounds"), &SpineSkeleton::get_collision_bounds);
+	ClassDB::bind_method(D_METHOD("collision_contains_point", "point"), &SpineSkeleton::collision_contains_point);
 	ClassDB::bind_method(D_METHOD("get_root_bone"), &SpineSkeleton::get_root_bone);
 	ClassDB::bind_method(D_METHOD("get_data"), &SpineSkeleton::get_skeleton_data_res);
 	ClassDB::bind_method(D_METHOD("get_bones"), &SpineSkeleton::get_bones);
@@ -249,6 +251,23 @@ Rect2 SpineSkeleton::get_bounds() {
 	spine::SkeletonClipping clipper;
 	skeleton->getBounds(x, y, w, h, bounds_vertex_buffer, &clipper);
 	return Rect2(x, y, w, h);
+}
+
+Rect2 SpineSkeleton::get_collision_bounds() {
+	SPINE_CHECK(skeleton, Rect2(0, 0, 0, 0))
+	collision_bounds.update(*skeleton, true);
+	if (collision_bounds.getBoundingBoxes().size() == 0) return Rect2(0, 0, 0, 0);
+	float min_x = collision_bounds.getMinX();
+	float min_y = collision_bounds.getMinY();
+	return Rect2(min_x, min_y, collision_bounds.getMaxX() - min_x, collision_bounds.getMaxY() - min_y);
+}
+
+bool SpineSkeleton::collision_contains_point(Vector2 point) {
+	SPINE_CHECK(skeleton, false)
+	collision_bounds.update(*skeleton, true);
+	if (collision_bounds.getBoundingBoxes().size() == 0) return false;
+	if (!collision_bounds.aabbContainsPoint(point.x, point.y)) return false;
+	return collision_bounds.containsPoint(point.x, point.y) != nullptr;
 }
 
 Ref<SpineBone> SpineSkeleton::get_root_bone() {
