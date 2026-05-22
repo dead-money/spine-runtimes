@@ -221,6 +221,9 @@ public:
 
 	void update_skeleton(float delta);
 
+	// UpdateMode_Events fast path: animation_state update+apply only.
+	void update_event_timelines(float delta);
+
 	Transform2D get_global_bone_transform(const String &bone_name);
 
 	void set_global_bone_transform(const String &bone_name, Transform2D transform);

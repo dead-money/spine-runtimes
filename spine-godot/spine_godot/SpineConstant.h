@@ -102,7 +102,10 @@ public:
 	enum UpdateMode {
 		UpdateMode_Process,
 		UpdateMode_Physics,
-		UpdateMode_Manual
+		UpdateMode_Manual,
+		// Process tick runs animation_state update+apply only — no bones,
+		// mesh, or draw. Off-screen path that still fires timeline events.
+		UpdateMode_Events
 	};
 
 	enum BoneMode {

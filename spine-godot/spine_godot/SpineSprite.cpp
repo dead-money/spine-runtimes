@@ -453,6 +453,7 @@ void SpineSprite::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_update_mode", "v"), &SpineSprite::set_update_mode);
 	ClassDB::bind_method(D_METHOD("get_update_mode"), &SpineSprite::get_update_mode);
+	ClassDB::bind_method(D_METHOD("update_event_timelines", "delta"), &SpineSprite::update_event_timelines);
 
 	ClassDB::bind_method(D_METHOD("set_normal_material", "material"), &SpineSprite::set_normal_material);
 	ClassDB::bind_method(D_METHOD("get_normal_material"), &SpineSprite::get_normal_material);
@@ -527,7 +528,7 @@ void SpineSprite::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "skeleton_data_res", PropertyHint::PROPERTY_HINT_RESOURCE_TYPE, "SpineSkeletonDataResource"),
 				 "set_skeleton_data_res", "get_skeleton_data_res");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "update_mode", PROPERTY_HINT_ENUM, "Process,Physics,Manual"), "set_update_mode", "get_update_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "update_mode", PROPERTY_HINT_ENUM, "Process,Physics,Manual,Events"), "set_update_mode", "get_update_mode");
 	ADD_GROUP("Materials", "");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "normal_material", PROPERTY_HINT_RESOURCE_TYPE, "Material"), "set_normal_material",
 				 "get_normal_material");
@@ -732,12 +733,13 @@ Ref<SpineAnimationState> SpineSprite::get_animation_state() {
 void SpineSprite::_notification(int what) {
 	switch (what) {
 		case NOTIFICATION_READY: {
-			set_process_internal(update_mode == SpineConstant::UpdateMode_Process);
+			set_process_internal(update_mode == SpineConstant::UpdateMode_Process || update_mode == SpineConstant::UpdateMode_Events);
 			set_physics_process_internal(update_mode == SpineConstant::UpdateMode_Physics);
 			break;
 		}
 		case NOTIFICATION_INTERNAL_PROCESS: {
 			if (update_mode == SpineConstant::UpdateMode_Process) update_skeleton(get_process_delta_time());
+			else if (update_mode == SpineConstant::UpdateMode_Events) update_event_timelines(get_process_delta_time());
 			break;
 		}
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
@@ -880,6 +882,14 @@ bool SpineSprite::_set(const StringName &property, const Variant &value) {
 	}
 
 	return false;
+}
+
+void SpineSprite::update_event_timelines(float delta) {
+	if (!skeleton_data_res.is_valid() || !skeleton_data_res->is_skeleton_data_loaded() || !skeleton.is_valid() || !skeleton->get_spine_object() ||
+		!animation_state.is_valid() || !animation_state->get_spine_object())
+		return;
+	animation_state->update(delta * time_scale);
+	animation_state->apply(skeleton);
 }
 
 void SpineSprite::update_skeleton(float delta) {
@@ -1462,7 +1472,7 @@ SpineConstant::UpdateMode SpineSprite::get_update_mode() {
 
 void SpineSprite::set_update_mode(SpineConstant::UpdateMode v) {
 	update_mode = v;
-	set_process_internal(update_mode == SpineConstant::UpdateMode_Process);
+	set_process_internal(update_mode == SpineConstant::UpdateMode_Process || update_mode == SpineConstant::UpdateMode_Events);
 	set_physics_process_internal(update_mode == SpineConstant::UpdateMode_Physics);
 }
 

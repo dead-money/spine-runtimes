@@ -80,6 +80,7 @@ void SpineConstant::_bind_methods() {
 	BIND_ENUM_CONSTANT(UpdateMode_Process)
 	BIND_ENUM_CONSTANT(UpdateMode_Physics)
 	BIND_ENUM_CONSTANT(UpdateMode_Manual)
+	BIND_ENUM_CONSTANT(UpdateMode_Events)
 
 	BIND_ENUM_CONSTANT(BoneMode_Follow)
 	BIND_ENUM_CONSTANT(BoneMode_Drive)
