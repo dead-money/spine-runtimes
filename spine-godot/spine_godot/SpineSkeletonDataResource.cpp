@@ -617,7 +617,13 @@ Array SpineSkeletonDataResource::get_skins() const {
 Ref<SpineSkin> SpineSkeletonDataResource::get_default_skin() const {
 	SPINE_CHECK(skeleton_data, nullptr)
 	auto skin = skeleton_data->getDefaultSkin();
-	if (skin) return nullptr;
+	// DEAD MONEY: inverted nullptr check — same bug class as
+	// SpineSkin::get_attachment (UPSTREAM.md). Returned null when the default
+	// skin EXISTED and a null-wrapping ref when it didn't. Hidden until now
+	// because equipment resolves templates from the body skin first; the
+	// hauled-item "Icons" attachment lives only in the default skin and is the
+	// first consumer to depend on it.
+	if (!skin) return nullptr;
 	Ref<SpineSkin> skin_ref(memnew(SpineSkin));
 	skin_ref->set_spine_object(this, skin);
 	return skin_ref;
