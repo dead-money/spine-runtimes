@@ -62,6 +62,12 @@ public:
 	float get_mask_index();
 	void set_mask_index(float v);
 
+	// DEAD MONEY (test support): first resolved texture-U of a region/mesh
+	// attachment's setup-index sequence entry — the U the renderer samples.
+	// Lets tests assert that set_region actually rebound the rendered UVs.
+	// Returns -1 for kinds with no region (BoundingBox, Path, …).
+	float get_first_uv();
+
 	void set_spine_object(const SpineSkeletonDataResource *_owner, spine::Attachment *_object) override {
 		if (get_spine_object()) get_spine_object()->dereference();
 		_set_spine_object_internal(_owner, _object);

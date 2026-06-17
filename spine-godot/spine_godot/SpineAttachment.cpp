@@ -39,6 +39,7 @@ void SpineAttachment::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_region", "region"), &SpineAttachment::set_region);
 	ClassDB::bind_method(D_METHOD("get_mask_index"), &SpineAttachment::get_mask_index);
 	ClassDB::bind_method(D_METHOD("set_mask_index", "v"), &SpineAttachment::set_mask_index);
+	ClassDB::bind_method(D_METHOD("get_first_uv"), &SpineAttachment::get_first_uv);
 }
 
 SpineAttachment::~SpineAttachment() {
@@ -104,4 +105,19 @@ float SpineAttachment::get_mask_index() {
 void SpineAttachment::set_mask_index(float v) {
 	SPINE_CHECK(get_spine_object(), )
 	get_spine_object()->setMaskIndex(v);
+}
+
+float SpineAttachment::get_first_uv() {
+	SPINE_CHECK(get_spine_object(), -1.0f)
+	auto *att = get_spine_object();
+	auto &rtti = att->getRTTI();
+	spine::Sequence *seq = nullptr;
+	if (rtti.isExactly(spine::RegionAttachment::rtti)) {
+		seq = &static_cast<spine::RegionAttachment *>(att)->getSequence();
+	} else if (rtti.isExactly(spine::MeshAttachment::rtti)) {
+		seq = &static_cast<spine::MeshAttachment *>(att)->getSequence();
+	}
+	if (!seq) return -1.0f;
+	spine::Array<float> &uvs = seq->getUVs(seq->getSetupIndex());
+	return uvs.size() > 0 ? uvs[0] : -1.0f;
 }
