@@ -949,9 +949,18 @@ void SpineSprite::update_meshes(Ref<SpineSkeleton> skeleton_ref) {
 			auto &sequence = region->getSequence();
 			int sequenceIndex = sequence.resolveIndex(slot->getAppliedPose());
 
+			// A placeholder whose region never resolved (atlas miss at load,
+			// no runtime rebind) carries a null region entry; skip it rather
+			// than dereference. findRegions() stores misses as null.
+			auto atlas_region = sequenceIndex < 0 ? nullptr : (spine::AtlasRegion *) sequence.getRegion(sequenceIndex);
+			if (!atlas_region) {
+				skeleton_clipper->clipEnd(*slot);
+				continue;
+			}
+
 			vertices->setSize(8, 0);
 			region->computeWorldVertices(*slot, sequence.getOffsets(sequenceIndex).buffer(), vertices->buffer(), 0);
-			renderer_object = (SpineRendererObject *) ((spine::AtlasRegion *) sequence.getRegion(sequenceIndex))->getPage()->texture;
+			renderer_object = (SpineRendererObject *) atlas_region->getPage()->texture;
 			uvs = &sequence.getUVs(sequenceIndex);
 			indices = &statics.quad_indices;
 
@@ -965,10 +974,16 @@ void SpineSprite::update_meshes(Ref<SpineSkeleton> skeleton_ref) {
 			auto &sequence = mesh->getSequence();
 			int sequenceIndex = sequence.resolveIndex(slot->getAppliedPose());
 
+			auto atlas_region = sequenceIndex < 0 ? nullptr : (spine::AtlasRegion *) sequence.getRegion(sequenceIndex);
+			if (!atlas_region) {
+				skeleton_clipper->clipEnd(*slot);
+				continue;
+			}
+
 			vertices->setSize(mesh->getWorldVerticesLength(), 0);
 			mesh->computeWorldVertices(*skeleton, *slot, 0, mesh->getWorldVerticesLength(), vertices->buffer(), 0, 2);
 
-			renderer_object = (SpineRendererObject *) ((spine::AtlasRegion *) sequence.getRegion(sequenceIndex))->getPage()->texture;
+			renderer_object = (SpineRendererObject *) atlas_region->getPage()->texture;
 			uvs = &sequence.getUVs(sequenceIndex);
 			indices = &mesh->getTriangles();
 
