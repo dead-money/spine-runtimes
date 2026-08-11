@@ -18,6 +18,7 @@ dev=${2%/}
 mono=false
 godot_cpp_repo=https://github.com/godotengine/godot-cpp.git
 godot_repo=https://github.com/godotengine/godot.git
+godot_cpp_revision=${GODOT_CPP_REVISION:-}
 
 if [[ $# -eq 3 ]]; then
     mono=${3%/}
@@ -35,9 +36,12 @@ fi
 
 godot_cpp_branch=$(echo $godot_branch | cut -d. -f1-2 | cut -d- -f1)
 
-if ! git ls-remote --exit-code --heads $godot_cpp_repo $godot_cpp_branch > /dev/null 2>&1; then
-    echo "godot-cpp branch '$godot_cpp_branch' not found, falling back to 'master'"
-    godot_cpp_branch="master"
+if [ -z "$godot_cpp_revision" ]; then
+    if ! git ls-remote --exit-code --heads $godot_cpp_repo $godot_cpp_branch > /dev/null 2>&1; then
+        echo "godot-cpp branch '$godot_cpp_branch' not found, falling back to 'master'"
+        godot_cpp_branch="master"
+    fi
+    godot_cpp_revision=$godot_cpp_branch
 fi
 
 cpus=2
@@ -49,7 +53,7 @@ else
 	cpus=$(grep -c ^processor /proc/cpuinfo)
 fi
 
-echo "godot-cpp branch: $godot_cpp_branch"
+echo "godot-cpp revision: $godot_cpp_revision"
 echo "godot branch: $godot_branch"
 echo "dev: $dev"
 echo "mono: $mono"
@@ -57,8 +61,25 @@ echo "cpus: $cpus"
 
 pushd ..
 
-rm -rf godot-cpp
-git clone --depth 1 $godot_cpp_repo -b $godot_cpp_branch
+current_godot_cpp_revision=""
+if [ -d godot-cpp/.git ]; then
+    if revision=$(git -C godot-cpp rev-parse HEAD 2>/dev/null) &&
+            git -C godot-cpp diff --quiet &&
+            git -C godot-cpp diff --cached --quiet; then
+        current_godot_cpp_revision=$revision
+    fi
+fi
+
+if [ "$current_godot_cpp_revision" != "$godot_cpp_revision" ]; then
+    rm -rf godot-cpp bin
+    find . \( -name '*.o' -o -name '*.os' -o -name '*.a' \) -delete
+    rm -f .sconsign.dblite
+
+    git init godot-cpp
+    git -C godot-cpp remote add origin $godot_cpp_repo
+    git -C godot-cpp fetch --depth 1 origin $godot_cpp_revision
+    git -C godot-cpp checkout --detach FETCH_HEAD
+fi
 
 rm -rf example-v4-extension/bin
 mkdir -p example-v4-extension/bin

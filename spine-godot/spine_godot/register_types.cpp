@@ -192,6 +192,23 @@ void register_spine_godot_types() {
 #endif
 
 #ifdef SPINE_GODOT_EXTENSION
+#if VERSION_MAJOR > 4 || (VERSION_MAJOR == 4 && VERSION_MINOR >= 7)
+	Ref<SpineAtlasResourceFormatLoader> atlas_loader_ref = memnew(SpineAtlasResourceFormatLoader);
+	atlas_loader = atlas_loader_ref.ptr();
+	ResourceLoader::get_singleton()->add_resource_format_loader(atlas_loader_ref);
+
+	Ref<SpineAtlasResourceFormatSaver> atlas_saver_ref = memnew(SpineAtlasResourceFormatSaver);
+	atlas_saver = atlas_saver_ref.ptr();
+	ResourceSaver::get_singleton()->add_resource_format_saver(atlas_saver_ref);
+
+	Ref<SpineSkeletonFileResourceFormatLoader> skeleton_file_loader_ref = memnew(SpineSkeletonFileResourceFormatLoader);
+	skeleton_file_loader = skeleton_file_loader_ref.ptr();
+	ResourceLoader::get_singleton()->add_resource_format_loader(skeleton_file_loader_ref);
+
+	Ref<SpineSkeletonFileResourceFormatSaver> skeleton_file_saver_ref = memnew(SpineSkeletonFileResourceFormatSaver);
+	skeleton_file_saver = skeleton_file_saver_ref.ptr();
+	ResourceSaver::get_singleton()->add_resource_format_saver(skeleton_file_saver_ref);
+#else
 	atlas_loader = memnew(SpineAtlasResourceFormatLoader);
 	ResourceLoader::get_singleton()->add_resource_format_loader(atlas_loader);
 
@@ -203,6 +220,7 @@ void register_spine_godot_types() {
 
 	skeleton_file_saver = memnew(SpineSkeletonFileResourceFormatSaver);
 	ResourceSaver::get_singleton()->add_resource_format_saver(skeleton_file_saver);
+#endif
 #else
 #if VERSION_MAJOR > 3
 	atlas_loader = memnew(SpineAtlasResourceFormatLoader);
@@ -244,6 +262,10 @@ void uninitialize_spine_godot_module(ModuleInitializationLevel level) {
 	ResourceSaver::get_singleton()->remove_resource_format_saver(atlas_saver);
 	ResourceLoader::get_singleton()->remove_resource_format_loader(skeleton_file_loader);
 	ResourceSaver::get_singleton()->remove_resource_format_saver(skeleton_file_saver);
+	atlas_loader = nullptr;
+	atlas_saver = nullptr;
+	skeleton_file_loader = nullptr;
+	skeleton_file_saver = nullptr;
 }
 #elif VERSION_MAJOR > 3
 void uninitialize_spine_godot_module(ModuleInitializationLevel level) {
