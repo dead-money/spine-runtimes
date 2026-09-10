@@ -37,6 +37,8 @@ class SpineAtlasRegion;
 
 class SpineSkeletonDataResource;
 
+class SpineSlot;
+
 class SpineAttachment : public SpineSkeletonDataResourceOwnedObject<spine::Attachment> {
 	GDCLASS(SpineAttachment, SpineObjectWrapper)
 
@@ -67,6 +69,14 @@ public:
 	// Lets tests assert that set_region actually rebound the rendered UVs.
 	// Returns -1 for kinds with no region (BoundingBox, Path, …).
 	float get_first_uv();
+
+	// DEAD MONEY: map points given in region-local UV space (0..1, origin at
+	// the region image's top-left) to skeleton-space positions for `slot`'s
+	// applied pose. Works for region and mesh attachments by locating each
+	// point in the attachment's triangles and interpolating world vertices;
+	// points outside every triangle extrapolate from the nearest one. Empty
+	// for attachment kinds without geometry.
+	PackedVector2Array map_region_points(Ref<SpineSlot> slot, PackedVector2Array region_uvs);
 
 	void set_spine_object(const SpineSkeletonDataResource *_owner, spine::Attachment *_object) override {
 		if (get_spine_object()) get_spine_object()->dereference();

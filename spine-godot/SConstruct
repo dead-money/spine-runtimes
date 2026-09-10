@@ -93,6 +93,11 @@ if env["platform"] == "ios":
     env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
     env.Append(LINKFLAGS=["-miphoneos-version-min=12.0"])
 
+# DEAD MONEY: MinGW links carry a GNU build-id so Crashpad minidumps can
+# match the .debugsymbols sidecar (Tools/pe_codeview_name.py needs the record).
+if env["platform"] == "windows" and env.get("use_mingw"):
+    env.Append(LINKFLAGS=["-Wl,--build-id"])
+
 # sources = Glob("spine_godot/*.cpp") + Glob("spine_godot/spine-cpp/src/spine/*.cpp")
 sources = Glob("spine_godot/spine-cpp/src/spine/*.cpp")
 sources.append("spine_godot/GodotSpineExtension.cpp")

@@ -64,6 +64,7 @@ class SpineSkeleton : public REFCOUNTED {
 	friend class SpineSlider;
 	friend class SpineBonePose;
 	friend class SpineBoneLocal;
+	friend class SpineAttachment;
 
 protected:
 	static void _bind_methods();

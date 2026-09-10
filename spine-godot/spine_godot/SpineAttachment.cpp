@@ -30,6 +30,10 @@
 #include "SpineAttachment.h"
 #include "SpineAtlasRegion.h"
 #include "SpineCommon.h"
+#include "SpineSlot.h"
+#include "SpineSprite.h"
+#include <spine/Skeleton.h>
+#include <cmath>
 #include <spine/RegionAttachment.h>
 #include <spine/MeshAttachment.h>
 
@@ -40,6 +44,7 @@ void SpineAttachment::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_mask_index"), &SpineAttachment::get_mask_index);
 	ClassDB::bind_method(D_METHOD("set_mask_index", "v"), &SpineAttachment::set_mask_index);
 	ClassDB::bind_method(D_METHOD("get_first_uv"), &SpineAttachment::get_first_uv);
+	ClassDB::bind_method(D_METHOD("map_region_points", "slot", "region_uvs"), &SpineAttachment::map_region_points);
 }
 
 SpineAttachment::~SpineAttachment() {
@@ -120,4 +125,69 @@ float SpineAttachment::get_first_uv() {
 	if (!seq) return -1.0f;
 	spine::Array<float> &uvs = seq->getUVs(seq->getSetupIndex());
 	return uvs.size() > 0 ? uvs[0] : -1.0f;
+}
+
+static void map_points_through_triangles(const float *world, const float *uvs, const unsigned short *tris, size_t tri_count,
+		const PackedVector2Array &region_uvs, PackedVector2Array &out) {
+	for (int p = 0; p < region_uvs.size(); p++) {
+		float px = region_uvs[p].x, py = region_uvs[p].y;
+		float best_min = -1e30f;
+		Vector2 best;
+		for (size_t t = 0; t < tri_count; t++) {
+			int i0 = tris[t * 3], i1 = tris[t * 3 + 1], i2 = tris[t * 3 + 2];
+			float u0 = uvs[i0 * 2], v0 = uvs[i0 * 2 + 1];
+			float u1 = uvs[i1 * 2], v1 = uvs[i1 * 2 + 1];
+			float u2 = uvs[i2 * 2], v2 = uvs[i2 * 2 + 1];
+			float det = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
+			if (fabsf(det) < 1e-12f) continue;
+			float l1 = ((px - u0) * (v2 - v0) - (u2 - u0) * (py - v0)) / det;
+			float l2 = ((u1 - u0) * (py - v0) - (px - u0) * (v1 - v0)) / det;
+			float l0 = 1.0f - l1 - l2;
+			float m = fminf(l0, fminf(l1, l2));
+			if (m > best_min) {
+				best_min = m;
+				best = Vector2(
+						l0 * world[i0 * 2] + l1 * world[i1 * 2] + l2 * world[i2 * 2],
+						l0 * world[i0 * 2 + 1] + l1 * world[i1 * 2 + 1] + l2 * world[i2 * 2 + 1]);
+			}
+			if (m >= 0.0f) break;
+		}
+		out.push_back(best);
+	}
+}
+
+PackedVector2Array SpineAttachment::map_region_points(Ref<SpineSlot> slot, PackedVector2Array region_uvs) {
+	PackedVector2Array out;
+	SPINE_CHECK(get_spine_object(), out)
+	if (slot.is_null() || !slot->get_spine_object() || region_uvs.size() == 0) return out;
+	auto *att = get_spine_object();
+	spine::Slot &spine_slot = *slot->get_spine_object();
+	auto &rtti = att->getRTTI();
+	if (rtti.isExactly(spine::RegionAttachment::rtti)) {
+		auto *region = static_cast<spine::RegionAttachment *>(att);
+		spine::Array<float> &offsets = region->getOffsets(spine_slot.getAppliedPose());
+		float world[8];
+		region->computeWorldVertices(spine_slot, offsets.buffer(), world, 0, 2);
+		// computeWorldVertices order: BR, BL, UL, UR.
+		static const float uvs[8] = { 1, 1, 0, 1, 0, 0, 1, 0 };
+		static const unsigned short tris[6] = { 0, 1, 2, 2, 3, 0 };
+		map_points_through_triangles(world, uvs, tris, 2, region_uvs, out);
+		return out;
+	}
+	if (rtti.isExactly(spine::MeshAttachment::rtti)) {
+		auto *mesh = static_cast<spine::MeshAttachment *>(att);
+		SpineSprite *sprite = slot->get_spine_owner();
+		if (!sprite || sprite->get_skeleton().is_null() || !sprite->get_skeleton()->get_spine_object()) return out;
+		spine::Skeleton &skeleton = *sprite->get_skeleton()->get_spine_object();
+		size_t count = mesh->getWorldVerticesLength();
+		spine::Array<float> world;
+		world.setSize(count, 0.0f);
+		mesh->computeWorldVertices(skeleton, spine_slot, 0, count, world.buffer(), 0, 2);
+		spine::Array<float> &uvs = mesh->getRegionUVs();
+		spine::Array<unsigned short> &tris = mesh->getTriangles();
+		if (uvs.size() < count || tris.size() < 3) return out;
+		map_points_through_triangles(world.buffer(), uvs.buffer(), tris.buffer(), tris.size() / 3, region_uvs, out);
+		return out;
+	}
+	return out;
 }
